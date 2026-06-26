@@ -700,5 +700,7 @@ with tab3:
         with col_chart1:
             labels = ['TIDAK CHURN', 'CHURN']
             values = [len(log_df) - churn, churn]
-            fig = px.pie(values=values, names=labels, title="Distribusi", color=labels,
-                         color
+            fig = px.pie(
+                values=values,
+                names=labels,
+                title="Distrib
