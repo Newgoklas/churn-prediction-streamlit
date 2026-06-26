@@ -10,7 +10,6 @@ from pathlib import Path
 import random
 import plotly.express as px
 from datetime import datetime
-from imblearn.over_sampling import SMOTE
 
 # ─────────────────────────────────────────────────────────────
 # Konfigurasi Halaman
@@ -486,9 +485,7 @@ with tab1:
         with st.spinner("⏳ Memproses..."):
             try:
                 X = preprocess_input(user_input)
-                prob = model.predict_proba(X)[0][1]
-                THRESHOLD = 0.35
-                pred = 1 if prob >= THRESHOLD else 0
+                pred = model.predict(X)[0]
                 proba = model.predict_proba(X)[0]
                 pc = proba[1] * 100
                 pn = proba[0] * 100
