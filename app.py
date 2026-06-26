@@ -1,5 +1,6 @@
 # =============================================================================
-# app.py - Churn Prediction PREMIUM (Cerah & Lengkap)
+# app.py - Churn Prediction ULTIMATE (Dengan Fitur Tambahan)
+# Fitur: Batch Prediction, Download Hasil, Visualisasi, Logging
 # =============================================================================
 
 import streamlit as st
@@ -8,6 +9,11 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import random
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+import io
+import base64
 
 # ─────────────────────────────────────────────────────────────
 # Konfigurasi Halaman
@@ -32,7 +38,6 @@ st.markdown("""
         background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
     }
     
-    /* ── HEADER ── */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 2rem 2rem 1.5rem 2rem;
@@ -96,7 +101,6 @@ st.markdown("""
         color: #ffd700;
     }
     
-    /* ── CARDS ── */
     .card-section {
         background: #ffffff;
         border-radius: 16px;
@@ -133,11 +137,6 @@ st.markdown("""
         margin-left: auto;
     }
     
-    .card-title .emoji {
-        font-size: 1.2rem;
-    }
-    
-    /* ── INPUTS ── */
     .stNumberInput > div > div > input {
         border-radius: 10px !important;
         border: 1.5px solid #e8edf4 !important;
@@ -160,7 +159,6 @@ st.markdown("""
         color: #4a4a6a !important;
     }
     
-    /* ── BUTTON ── */
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         color: white !important;
@@ -179,15 +177,6 @@ st.markdown("""
         box-shadow: 0 12px 40px rgba(102,126,234,0.4) !important;
     }
     
-    /* ── SAMPLE BUTTONS ── */
-    .sample-btn-container {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    /* ── RESULT ── */
     .result-churn {
         background: linear-gradient(135deg, #ff6b6b, #ee5a24);
         color: white;
@@ -228,7 +217,6 @@ st.markdown("""
         margin-top: 0.3rem;
     }
     
-    /* ── METRIC ── */
     .metric-box {
         background: #f8fafc;
         border-radius: 12px;
@@ -254,8 +242,8 @@ st.markdown("""
     .metric-box .value.blue { color: #667eea; }
     .metric-box .value.pink { color: #e83e8c; }
     .metric-box .value.green { color: #00b894; }
+    .metric-box .value.red { color: #ff6b6b; }
     
-    /* ── INFO BOX ── */
     .info-box {
         background: linear-gradient(135deg, #e8f4fd, #d6eaf8);
         border-radius: 12px;
@@ -310,6 +298,15 @@ st.markdown("""
     
     .css-1d391kg .stMarkdown {
         color: #1a1a2e;
+    }
+    
+    .download-btn {
+        background: linear-gradient(135deg, #00b894, #00a86b) !important;
+        box-shadow: 0 8px 30px rgba(0,184,148,0.3) !important;
+    }
+    
+    .download-btn:hover {
+        box-shadow: 0 12px 40px rgba(0,184,148,0.4) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -366,7 +363,7 @@ meta = arts.get('metadata', {})
 # ─────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="main-header">
-    <h1>🚀 Customer Churn Predictor</h1>
+    <h1>🚀 Customer Churn Predictor Pro</h1>
     <p>Prediksi churn customer dengan machine learning</p>
     <div class="header-badge">⚡ Akurasi <span>{meta.get('test_accuracy', 0.8923):.1%}</span> · F1 <span>{meta.get('test_f1', 0.8323):.3f}</span></div>
 </div>
@@ -396,283 +393,504 @@ with st.sidebar:
         st.markdown(f"{emojis[i-1]} `{feat.replace('_', ' ').title()}`")
     
     st.divider()
-    st.caption("Isi 7 data → Klik Prediksi")
-
-# ─────────────────────────────────────────────────────────────
-# FORM - 7 FITUR
-# ─────────────────────────────────────────────────────────────
-st.markdown('<div class="info-box">💡 <strong>Isi 7 data berikut</strong> untuk memprediksi churn. Cukup 1 menit!</div>', unsafe_allow_html=True)
-
-# ── TOMBOL CONTOH ──
-col_s1, col_s2, col_s3 = st.columns(3)
-
-with col_s1:
-    if st.button("🎲 Random", use_container_width=True):
-        st.session_state['sample'] = {
-            'satisfaction_score': random.randint(1, 10),
-            'support_tickets': random.randint(0, 10),
-            'avg_session_time': round(random.uniform(0.5, 15), 1),
-            'last_3_month_purchase_freq': random.randint(0, 15),
-            'total_spent': random.randint(50, 2000),
-            'is_premium_user': random.randint(0, 1),
-            'delivery_delay_days': random.randint(0, 15)
-        }
-
-with col_s2:
-    if st.button("⚠️ Data CHURN", use_container_width=True):
-        st.session_state['sample'] = {
-            'satisfaction_score': 2,
-            'support_tickets': 8,
-            'avg_session_time': 1.2,
-            'last_3_month_purchase_freq': 0,
-            'total_spent': 50,
-            'is_premium_user': 0,
-            'delivery_delay_days': 12
-        }
-
-with col_s3:
-    if st.button("✅ Data TIDAK CHURN", use_container_width=True):
-        st.session_state['sample'] = {
-            'satisfaction_score': 9,
-            'support_tickets': 0,
-            'avg_session_time': 12.5,
-            'last_3_month_purchase_freq': 12,
-            'total_spent': 2500,
-            'is_premium_user': 1,
-            'delivery_delay_days': 1
-        }
-
-# ── 7 FITUR ──
-FEATURES = {
-    'satisfaction_score': {
-        'min': 1, 'max': 10, 'default': 7,
-        'label': '⭐ Skor Kepuasan (1-10)',
-        'step': 1,
-        'help': 'Semakin tinggi, semakin puas'
-    },
-    'support_tickets': {
-        'min': 0, 'max': 20, 'default': 1,
-        'label': '🎫 Tiket Support',
-        'step': 1,
-        'help': 'Jumlah tiket yang diajukan'
-    },
-    'avg_session_time': {
-        'min': 0.0, 'max': 60.0, 'default': 5.0,
-        'label': '⏱️ Rata-rata Sesi (menit)',
-        'step': 0.1,
-        'help': 'Rata-rata waktu per sesi'
-    },
-    'last_3_month_purchase_freq': {
-        'min': 0, 'max': 30, 'default': 3,
-        'label': '🛍️ Frekuensi Pembelian 3 Bulan',
-        'step': 1,
-        'help': 'Jumlah pembelian 3 bulan terakhir'
-    },
-    'total_spent': {
-        'min': 0.0, 'max': 10000.0, 'default': 500.0,
-        'label': '💰 Total Pengeluaran ($)',
-        'step': 10.0,
-        'help': 'Total uang yang dikeluarkan'
-    },
-    'is_premium_user': {
-        'min': 0, 'max': 1, 'default': 1,
-        'label': '👑 Premium User (0=Tidak, 1=Ya)',
-        'step': 1,
-        'help': 'Status premium pelanggan'
-    },
-    'delivery_delay_days': {
-        'min': 0, 'max': 30, 'default': 6,
-        'label': '📦 Keterlambatan Kirim (hari)',
-        'step': 1,
-        'help': 'Rata-rata keterlambatan pengiriman'
-    },
-}
-
-user_input = {}
-
-# Apply sample
-if 'sample' in st.session_state:
-    for k, v in st.session_state['sample'].items():
-        if k in FEATURES:
-            FEATURES[k]['default'] = v
-
-# ── RENDER 2 KOLOM ──
-c1, c2 = st.columns(2)
-
-with c1:
-    st.markdown("""
-    <div class="card-section">
-        <div class="card-title">
-            <span class="emoji">📊</span> Fitur Utama
-            <span class="badge">4</span>
-        </div>
-    """, unsafe_allow_html=True)
     
-    for k in ['satisfaction_score', 'support_tickets', 'avg_session_time', 'last_3_month_purchase_freq']:
-        f = FEATURES[k]
-        if isinstance(f['default'], float):
-            user_input[k] = st.number_input(
-                f['label'],
-                min_value=float(f['min']),
-                max_value=float(f['max']),
-                value=float(f['default']),
-                step=float(f['step']),
-                help=f.get('help', ''),
-                key=f"a_{k}"
-            )
-        else:
-            user_input[k] = st.number_input(
-                f['label'],
-                min_value=int(f['min']),
-                max_value=int(f['max']),
-                value=int(f['default']),
-                step=int(f['step']),
-                help=f.get('help', ''),
-                key=f"a_{k}"
-            )
-    st.markdown("</div>", unsafe_allow_html=True)
+    # ── LOG PREDIKSI ──
+    if 'prediction_log' in st.session_state and len(st.session_state.prediction_log) > 0:
+        st.markdown("### 📊 Statistik Prediksi")
+        log_df = pd.DataFrame(st.session_state.prediction_log)
+        total = len(log_df)
+        churn_count = log_df[log_df['prediction'] == 1].shape[0]
+        no_churn_count = total - churn_count
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Total Prediksi", total)
+        with col2:
+            st.metric("⚠️ Churn", churn_count, delta=f"{churn_count/total*100:.1f}%")
+        
+        st.caption(f"🕐 Prediksi terakhir: {log_df['timestamp'].iloc[-1] if 'timestamp' in log_df.columns else '-'}")
 
-with c2:
-    st.markdown("""
-    <div class="card-section">
-        <div class="card-title">
-            <span class="emoji">💰</span> Fitur Tambahan
-            <span class="badge">3</span>
-        </div>
-    """, unsafe_allow_html=True)
+# ─────────────────────────────────────────────────────────────
+# TAB: Single Prediction | Batch Prediction | Dashboard
+# ─────────────────────────────────────────────────────────────
+tab1, tab2, tab3 = st.tabs(["🔮 Prediksi Tunggal", "📊 Batch Prediction", "📈 Dashboard"])
+
+# =============================================================================
+# TAB 1: PREDIKSI TUNGGAL
+# =============================================================================
+with tab1:
+    st.markdown('<div class="info-box">💡 <strong>Isi 7 data berikut</strong> untuk memprediksi churn. Cukup 1 menit!</div>', unsafe_allow_html=True)
+
+    # ── TOMBOL CONTOH ──
+    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
     
-    for k in ['total_spent', 'is_premium_user', 'delivery_delay_days']:
-        f = FEATURES[k]
-        if isinstance(f['default'], float):
-            user_input[k] = st.number_input(
-                f['label'],
-                min_value=float(f['min']),
-                max_value=float(f['max']),
-                value=float(f['default']),
-                step=float(f['step']),
-                help=f.get('help', ''),
-                key=f"b_{k}"
-            )
-        else:
-            user_input[k] = st.number_input(
-                f['label'],
-                min_value=int(f['min']),
-                max_value=int(f['max']),
-                value=int(f['default']),
-                step=int(f['step']),
-                help=f.get('help', ''),
-                key=f"b_{k}"
-            )
-    st.markdown("</div>", unsafe_allow_html=True)
+    with col_s1:
+        if st.button("🎲 Random", use_container_width=True):
+            st.session_state['sample'] = {
+                'satisfaction_score': random.randint(1, 10),
+                'support_tickets': random.randint(0, 10),
+                'avg_session_time': round(random.uniform(0.5, 15), 1),
+                'last_3_month_purchase_freq': random.randint(0, 15),
+                'total_spent': random.randint(50, 2000),
+                'is_premium_user': random.randint(0, 1),
+                'delivery_delay_days': random.randint(0, 15)
+            }
 
-# ─────────────────────────────────────────────────────────────
-# PREPROCESS
-# ─────────────────────────────────────────────────────────────
-def preprocess_input(raw: dict) -> np.ndarray:
-    row = {}
-    for k, v in raw.items():
-        row[k] = v
-    ordered = []
-    for f in top_feat:
-        ordered.append(row.get(f, 0))
-    df = pd.DataFrame([ordered], columns=top_feat)
-    return scaler.transform(df)
+    with col_s2:
+        if st.button("⚠️ CHURN", use_container_width=True):
+            st.session_state['sample'] = {
+                'satisfaction_score': 2,
+                'support_tickets': 8,
+                'avg_session_time': 1.2,
+                'last_3_month_purchase_freq': 0,
+                'total_spent': 50,
+                'is_premium_user': 0,
+                'delivery_delay_days': 12
+            }
 
-# ─────────────────────────────────────────────────────────────
-# PREDIKSI
-# ─────────────────────────────────────────────────────────────
-st.divider()
+    with col_s3:
+        if st.button("✅ TIDAK CHURN", use_container_width=True):
+            st.session_state['sample'] = {
+                'satisfaction_score': 9,
+                'support_tickets': 0,
+                'avg_session_time': 12.5,
+                'last_3_month_purchase_freq': 12,
+                'total_spent': 2500,
+                'is_premium_user': 1,
+                'delivery_delay_days': 1
+            }
+    
+    with col_s4:
+        if st.button("🔄 Reset", use_container_width=True):
+            if 'sample' in st.session_state:
+                del st.session_state['sample']
+            st.rerun()
 
-col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-with col_btn2:
-    predict_btn = st.button("🚀 Prediksi Churn", use_container_width=True)
+    # ── 7 FITUR ──
+    FEATURES = {
+        'satisfaction_score': {
+            'min': 1, 'max': 10, 'default': 7,
+            'label': '⭐ Skor Kepuasan (1-10)',
+            'step': 1,
+            'help': 'Semakin tinggi, semakin puas'
+        },
+        'support_tickets': {
+            'min': 0, 'max': 20, 'default': 1,
+            'label': '🎫 Tiket Support',
+            'step': 1,
+            'help': 'Jumlah tiket yang diajukan'
+        },
+        'avg_session_time': {
+            'min': 0.0, 'max': 60.0, 'default': 5.0,
+            'label': '⏱️ Rata-rata Sesi (menit)',
+            'step': 0.1,
+            'help': 'Rata-rata waktu per sesi'
+        },
+        'last_3_month_purchase_freq': {
+            'min': 0, 'max': 30, 'default': 3,
+            'label': '🛍️ Frekuensi Pembelian 3 Bulan',
+            'step': 1,
+            'help': 'Jumlah pembelian 3 bulan terakhir'
+        },
+        'total_spent': {
+            'min': 0.0, 'max': 10000.0, 'default': 500.0,
+            'label': '💰 Total Pengeluaran ($)',
+            'step': 10.0,
+            'help': 'Total uang yang dikeluarkan'
+        },
+        'is_premium_user': {
+            'min': 0, 'max': 1, 'default': 1,
+            'label': '👑 Premium User (0=Tidak, 1=Ya)',
+            'step': 1,
+            'help': 'Status premium pelanggan'
+        },
+        'delivery_delay_days': {
+            'min': 0, 'max': 30, 'default': 6,
+            'label': '📦 Keterlambatan Kirim (hari)',
+            'step': 1,
+            'help': 'Rata-rata keterlambatan pengiriman'
+        },
+    }
 
-if predict_btn:
-    with st.spinner("⏳ Memproses data..."):
-        try:
-            X_input = preprocess_input(user_input)
-            prediction = model.predict(X_input)[0]
+    user_input = {}
 
-            if hasattr(model, 'predict_proba'):
-                proba = model.predict_proba(X_input)[0]
-                prob_churn = proba[1] * 100
-                prob_no_churn = proba[0] * 100
+    # Apply sample
+    if 'sample' in st.session_state:
+        for k, v in st.session_state['sample'].items():
+            if k in FEATURES:
+                FEATURES[k]['default'] = v
+
+    # ── RENDER 2 KOLOM ──
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.markdown("""
+        <div class="card-section">
+            <div class="card-title">
+                <span>📊</span> Fitur Utama
+                <span class="badge">4</span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        for k in ['satisfaction_score', 'support_tickets', 'avg_session_time', 'last_3_month_purchase_freq']:
+            f = FEATURES[k]
+            if isinstance(f['default'], float):
+                user_input[k] = st.number_input(
+                    f['label'],
+                    min_value=float(f['min']),
+                    max_value=float(f['max']),
+                    value=float(f['default']),
+                    step=float(f['step']),
+                    help=f.get('help', ''),
+                    key=f"a_{k}"
+                )
             else:
-                prob_churn = 100 if prediction == 1 else 0
-                prob_no_churn = 100 - prob_churn
+                user_input[k] = st.number_input(
+                    f['label'],
+                    min_value=int(f['min']),
+                    max_value=int(f['max']),
+                    value=int(f['default']),
+                    step=int(f['step']),
+                    help=f.get('help', ''),
+                    key=f"a_{k}"
+                )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-            st.divider()
-            
-            st.markdown("### 📋 Hasil Prediksi")
-            
-            col_res, col_prob = st.columns([1, 1])
-            
-            with col_res:
-                if prediction == 1:
-                    st.markdown("""
-                    <div class="result-churn">
-                        ⚠️ CHURN
-                        <span class="sub">Pelanggan berpotensi meninggalkan layanan</span>
-                    </div>
-                    """, unsafe_allow_html=True)
+    with c2:
+        st.markdown("""
+        <div class="card-section">
+            <div class="card-title">
+                <span>💰</span> Fitur Tambahan
+                <span class="badge">3</span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        for k in ['total_spent', 'is_premium_user', 'delivery_delay_days']:
+            f = FEATURES[k]
+            if isinstance(f['default'], float):
+                user_input[k] = st.number_input(
+                    f['label'],
+                    min_value=float(f['min']),
+                    max_value=float(f['max']),
+                    value=float(f['default']),
+                    step=float(f['step']),
+                    help=f.get('help', ''),
+                    key=f"b_{k}"
+                )
+            else:
+                user_input[k] = st.number_input(
+                    f['label'],
+                    min_value=int(f['min']),
+                    max_value=int(f['max']),
+                    value=int(f['default']),
+                    step=int(f['step']),
+                    help=f.get('help', ''),
+                    key=f"b_{k}"
+                )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ─────────────────────────────────────────────────────────────
+    # PREPROCESS
+    # ─────────────────────────────────────────────────────────────
+    def preprocess_input(raw: dict) -> np.ndarray:
+        row = {}
+        for k, v in raw.items():
+            row[k] = v
+        ordered = []
+        for f in top_feat:
+            ordered.append(row.get(f, 0))
+        df = pd.DataFrame([ordered], columns=top_feat)
+        return scaler.transform(df)
+
+    # ─────────────────────────────────────────────────────────────
+    # PREDIKSI
+    # ─────────────────────────────────────────────────────────────
+    st.divider()
+
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+    with col_btn2:
+        predict_btn = st.button("🚀 Prediksi Churn", use_container_width=True)
+
+    if predict_btn:
+        with st.spinner("⏳ Memproses data..."):
+            try:
+                X_input = preprocess_input(user_input)
+                prediction = model.predict(X_input)[0]
+
+                if hasattr(model, 'predict_proba'):
+                    proba = model.predict_proba(X_input)[0]
+                    prob_churn = proba[1] * 100
+                    prob_no_churn = proba[0] * 100
                 else:
-                    st.markdown("""
-                    <div class="result-ok">
-                        ✅ TIDAK CHURN
-                        <span class="sub">Pelanggan kemungkinan tetap bertahan</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-            
-            with col_prob:
-                st.markdown("#### Probabilitas")
-                col_m1, col_m2 = st.columns(2)
-                with col_m1:
-                    st.metric("🔴 Churn", f"{prob_churn:.1f}%")
-                with col_m2:
-                    st.metric("🟢 Tidak Churn", f"{prob_no_churn:.1f}%")
+                    prob_churn = 100 if prediction == 1 else 0
+                    prob_no_churn = 100 - prob_churn
+
+                # ── LOG PREDIKSI ──
+                if 'prediction_log' not in st.session_state:
+                    st.session_state.prediction_log = []
                 
-                st.progress(int(prob_churn), text=f"Risiko Churn: {prob_churn:.1f}%")
-            
-            # ── REKOMENDASI ──
-            st.markdown("### 💡 Rekomendasi")
-            
-            if prediction == 1:
-                recs = []
-                if user_input.get('satisfaction_score', 10) < 6:
-                    recs.append("📞 **Hubungi pelanggan** — skor kepuasan rendah.")
-                if user_input.get('support_tickets', 0) > 3:
-                    recs.append("🔧 **Selesaikan tiket support** — terlalu banyak keluhan.")
-                if user_input.get('last_3_month_purchase_freq', 10) < 2:
-                    recs.append("🛍️ **Kirim penawaran khusus** — pembelian rendah.")
-                if user_input.get('avg_session_time', 0) < 3:
-                    recs.append("⏱️ **Tingkatkan engagement** — sesi terlalu singkat.")
-                if user_input.get('delivery_delay_days', 0) > 5:
-                    recs.append("🚚 **Perbaiki pengiriman** — keterlambatan tinggi.")
-                if not recs:
-                    recs.append("🔄 **Jalankan program retensi** — berikan insentif.")
-                for r in recs:
-                    st.warning(r)
-            else:
-                st.success("✅ Customer dalam kondisi sehat. Pertahankan kualitas!")
-                if user_input.get('satisfaction_score', 0) >= 9:
-                    st.balloons()
-                    st.info("⭐ Pelanggan sangat puas! Pertahankan.")
+                log_entry = {
+                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    **user_input,
+                    'prediction': int(prediction),
+                    'prob_churn': round(prob_churn, 2),
+                    'prob_no_churn': round(prob_no_churn, 2)
+                }
+                st.session_state.prediction_log.append(log_entry)
 
-            # ── DETAIL ──
-            with st.expander("📄 Detail Data Input"):
-                df_display = pd.DataFrame([user_input]).T.reset_index()
-                df_display.columns = ['Fitur', 'Nilai']
-                st.dataframe(df_display, use_container_width=True, hide_index=True)
+                st.divider()
+                
+                st.markdown("### 📋 Hasil Prediksi")
+                
+                col_res, col_prob = st.columns([1, 1])
+                
+                with col_res:
+                    if prediction == 1:
+                        st.markdown("""
+                        <div class="result-churn">
+                            ⚠️ CHURN
+                            <span class="sub">Pelanggan berpotensi meninggalkan layanan</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown("""
+                        <div class="result-ok">
+                            ✅ TIDAK CHURN
+                            <span class="sub">Pelanggan kemungkinan tetap bertahan</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                with col_prob:
+                    st.markdown("#### Probabilitas")
+                    col_m1, col_m2 = st.columns(2)
+                    with col_m1:
+                        st.metric("🔴 Churn", f"{prob_churn:.1f}%")
+                    with col_m2:
+                        st.metric("🟢 Tidak Churn", f"{prob_no_churn:.1f}%")
+                    
+                    st.progress(int(prob_churn), text=f"Risiko Churn: {prob_churn:.1f}%")
+                
+                # ── REKOMENDASI ──
+                st.markdown("### 💡 Rekomendasi")
+                
+                if prediction == 1:
+                    recs = []
+                    if user_input.get('satisfaction_score', 10) < 6:
+                        recs.append("📞 **Hubungi pelanggan** — skor kepuasan rendah.")
+                    if user_input.get('support_tickets', 0) > 3:
+                        recs.append("🔧 **Selesaikan tiket support** — terlalu banyak keluhan.")
+                    if user_input.get('last_3_month_purchase_freq', 10) < 2:
+                        recs.append("🛍️ **Kirim penawaran khusus** — pembelian rendah.")
+                    if user_input.get('avg_session_time', 0) < 3:
+                        recs.append("⏱️ **Tingkatkan engagement** — sesi terlalu singkat.")
+                    if user_input.get('delivery_delay_days', 0) > 5:
+                        recs.append("🚚 **Perbaiki pengiriman** — keterlambatan tinggi.")
+                    if not recs:
+                        recs.append("🔄 **Jalankan program retensi** — berikan insentif.")
+                    for r in recs:
+                        st.warning(r)
+                else:
+                    st.success("✅ Customer dalam kondisi sehat. Pertahankan kualitas!")
+                    if user_input.get('satisfaction_score', 0) >= 9:
+                        st.balloons()
+                        st.info("⭐ Pelanggan sangat puas! Pertahankan.")
 
+                # ── DETAIL ──
+                with st.expander("📄 Detail Data Input"):
+                    df_display = pd.DataFrame([user_input]).T.reset_index()
+                    df_display.columns = ['Fitur', 'Nilai']
+                    st.dataframe(df_display, use_container_width=True, hide_index=True)
+
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
+                st.exception(e)
+
+# =============================================================================
+# TAB 2: BATCH PREDICTION
+# =============================================================================
+with tab2:
+    st.markdown("""
+    <div class="info-box">
+        📊 <strong>Upload file CSV</strong> untuk prediksi batch. 
+        File harus memiliki kolom yang sama dengan 7 fitur utama.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # ── TEMPLATE DOWNLOAD ──
+    template_df = pd.DataFrame({
+        'satisfaction_score': [7, 2],
+        'support_tickets': [1, 8],
+        'avg_session_time': [5.0, 1.2],
+        'last_3_month_purchase_freq': [3, 0],
+        'total_spent': [500, 50],
+        'is_premium_user': [1, 0],
+        'delivery_delay_days': [6, 12]
+    })
+    
+    csv_template = template_df.to_csv(index=False)
+    st.download_button(
+        label="📥 Download Template CSV",
+        data=csv_template,
+        file_name="churn_prediction_template.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+    
+    # ── UPLOAD ──
+    uploaded_file = st.file_uploader("Upload file CSV", type=['csv'])
+    
+    if uploaded_file is not None:
+        try:
+            batch_df = pd.read_csv(uploaded_file)
+            st.success(f"✅ File berhasil diupload! {len(batch_df)} baris data.")
+            
+            # Validasi kolom
+            required_cols = ['satisfaction_score', 'support_tickets', 'avg_session_time', 
+                           'last_3_month_purchase_freq', 'total_spent', 'is_premium_user', 
+                           'delivery_delay_days']
+            
+            missing_cols = [col for col in required_cols if col not in batch_df.columns]
+            if missing_cols:
+                st.error(f"❌ Kolom yang hilang: {missing_cols}")
+                st.stop()
+            
+            if st.button("🚀 Prediksi Batch", use_container_width=True):
+                with st.spinner(f"⏳ Memproses {len(batch_df)} data..."):
+                    # Prediksi
+                    predictions = []
+                    prob_churns = []
+                    
+                    for idx, row in batch_df.iterrows():
+                        input_dict = row.to_dict()
+                        X = preprocess_input(input_dict)
+                        pred = model.predict(X)[0]
+                        proba = model.predict_proba(X)[0]
+                        predictions.append(pred)
+                        prob_churns.append(proba[1] * 100)
+                    
+                    batch_df['prediction'] = predictions
+                    batch_df['prob_churn'] = prob_churns
+                    batch_df['status'] = batch_df['prediction'].apply(
+                        lambda x: '⚠️ CHURN' if x == 1 else '✅ TIDAK CHURN'
+                    )
+                    
+                    # ── HASIL ──
+                    st.divider()
+                    st.markdown("### 📊 Hasil Prediksi Batch")
+                    
+                    # Statistik
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Total Data", len(batch_df))
+                    with col2:
+                        churn_count = batch_df['prediction'].sum()
+                        st.metric("⚠️ CHURN", churn_count)
+                    with col3:
+                        st.metric("✅ TIDAK CHURN", len(batch_df) - churn_count)
+                    
+                    # Tabel hasil
+                    st.dataframe(batch_df, use_container_width=True)
+                    
+                    # ── VISUALISASI ──
+                    col_chart1, col_chart2 = st.columns(2)
+                    
+                    with col_chart1:
+                        status_counts = batch_df['status'].value_counts()
+                        fig = px.pie(
+                            values=status_counts.values,
+                            names=status_counts.index,
+                            title="Distribusi Hasil Prediksi",
+                            color=status_counts.index,
+                            color_discrete_map={
+                                '⚠️ CHURN': '#ff6b6b',
+                                '✅ TIDAK CHURN': '#00b894'
+                            }
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    with col_chart2:
+                        fig = px.histogram(
+                            batch_df,
+                            x='prob_churn',
+                            nbins=20,
+                            title="Distribusi Probabilitas Churn",
+                            color_discrete_sequence=['#667eea']
+                        )
+                        fig.update_layout(
+                            xaxis_title="Probabilitas Churn (%)",
+                            yaxis_title="Jumlah"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    # ── DOWNLOAD ──
+                    csv_result = batch_df.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download Hasil Prediksi (CSV)",
+                        data=csv_result,
+                        file_name=f"churn_prediction_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+                    
         except Exception as e:
             st.error(f"❌ Error: {e}")
-            st.exception(e)
 
-# ─────────────────────────────────────────────────────────────
-# FOOTER
-# ─────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="footer">
-    🚀 Churn Predictor Pro · 7 Fitur Utama · 2024
-</div>
-""", unsafe_allow_html=True)
+# =============================================================================
+# TAB 3: DASHBOARD
+# =============================================================================
+with tab3:
+    st.markdown("""
+    <div class="info-box">
+        📈 <strong>Dashboard Prediksi</strong> — Ringkasan semua prediksi yang telah dilakukan.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if 'prediction_log' in st.session_state and len(st.session_state.prediction_log) > 0:
+        log_df = pd.DataFrame(st.session_state.prediction_log)
+        
+        # Statistik
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("📊 Total Prediksi", len(log_df))
+        with col2:
+            churn_count = log_df[log_df['prediction'] == 1].shape[0]
+            st.metric("⚠️ CHURN", churn_count, delta=f"{churn_count/len(log_df)*100:.1f}%")
+        with col3:
+            no_churn_count = len(log_df) - churn_count
+            st.metric("✅ TIDAK CHURN", no_churn_count)
+        with col4:
+            avg_churn = log_df['prob_churn'].mean()
+            st.metric("📈 Rata-rata Risiko", f"{avg_churn:.1f}%")
+        
+        # ── GRAFIK ──
+        col_chart1, col_chart2 = st.columns(2)
+        
+        with col_chart1:
+            # Pie chart
+            status_counts = log_df['prediction'].value_counts()
+            labels = ['TIDAK CHURN', 'CHURN']
+            values = [status_counts.get(0, 0), status_counts.get(1, 0)]
+            
+            fig = px.pie(
+                values=values,
+                names=labels,
+                title="Distribusi Hasil Prediksi",
+                color=labels,
+                color_discrete_map={
+                    'CHURN': '#ff6b6b',
+                    'TIDAK CHURN': '#00b894'
+                }
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col_chart2:
+            # Histogram probabilitas
+            fig = px.histogram(
+                log_df,
+                x='prob_churn',
+                nbins=20,
+                title="Distribusi Probabilitas Churn",
+                color_discrete_sequence=['#667eea']
+            )
+            fig.update_layout(
+                xaxis_title="Probabilitas Churn (%)
