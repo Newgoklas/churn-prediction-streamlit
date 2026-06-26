@@ -1,5 +1,5 @@
 # =============================================================================
-# app.py - Churn Prediction ULTIMATE (LENGKAP + PANDUAN - FINAL FIXED)
+# app.py - Churn Prediction ULTIMATE (10 FITUR - FULL VERSION)
 # =============================================================================
 
 import streamlit as st
@@ -265,7 +265,7 @@ meta = arts.get('metadata', {})
 st.markdown(f"""
 <div class="main-header">
     <h1>🚀 Customer Churn Predictor Pro</h1>
-    <p>Prediksi churn customer dengan machine learning</p>
+    <p>Prediksi churn customer dengan 10 fitur utama</p>
     <div class="header-badge">⚡ Akurasi <span>{meta.get('test_accuracy', 0.8923):.1%}</span> · F1 <span>{meta.get('test_f1', 0.8323):.3f}</span></div>
 </div>
 """, unsafe_allow_html=True)
@@ -288,9 +288,9 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### 📌 7 Fitur Utama")
-    emojis = ['⭐', '🎫', '⏱️', '🛍️', '💰', '👑', '📦']
-    for i, feat in enumerate(top_feat[:7], 1):
+    st.markdown("### 📌 10 Fitur Utama")
+    emojis = ['⭐', '🎫', '⏱️', '🛍️', '💰', '👑', '📦', '🧑', '👀', '📊']
+    for i, feat in enumerate(top_feat[:10], 1):
         st.markdown(f"{emojis[i-1]} `{feat.replace('_', ' ').title()}`")
     
     st.divider()
@@ -313,7 +313,7 @@ with st.sidebar:
 tab1, tab2, tab3 = st.tabs(["🔮 Prediksi Tunggal", "📊 Batch Prediction", "📈 Dashboard"])
 
 with tab1:
-    st.markdown('<div class="info-box">💡 <strong>Isi 7 data berikut</strong> untuk memprediksi churn.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">💡 <strong>Isi 10 data berikut</strong> untuk memprediksi churn.</div>', unsafe_allow_html=True)
 
     # ── TOMBOL CONTOH ──
     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
@@ -326,21 +326,38 @@ with tab1:
                 'last_3_month_purchase_freq': random.randint(0, 15),
                 'total_spent': random.randint(50, 2000),
                 'is_premium_user': random.randint(0, 1),
-                'delivery_delay_days': random.randint(0, 15)
+                'delivery_delay_days': random.randint(0, 15),
+                'age': random.randint(18, 60),
+                'total_visits': random.randint(1, 100),
+                'nps_score': random.randint(-100, 100)
             }
     with col_s2:
         if st.button("⚠️ CHURN", use_container_width=True):
             st.session_state['sample'] = {
-                'satisfaction_score': 2, 'support_tickets': 8, 'avg_session_time': 1.2,
-                'last_3_month_purchase_freq': 0, 'total_spent': 50, 'is_premium_user': 0,
-                'delivery_delay_days': 12
+                'satisfaction_score': 1,
+                'support_tickets': 10,
+                'avg_session_time': 0.5,
+                'last_3_month_purchase_freq': 0,
+                'total_spent': 10,
+                'is_premium_user': 0,
+                'delivery_delay_days': 20,
+                'age': 18,
+                'total_visits': 1,
+                'nps_score': -100
             }
     with col_s3:
         if st.button("✅ TIDAK CHURN", use_container_width=True):
             st.session_state['sample'] = {
-                'satisfaction_score': 9, 'support_tickets': 0, 'avg_session_time': 12.5,
-                'last_3_month_purchase_freq': 12, 'total_spent': 2500, 'is_premium_user': 1,
-                'delivery_delay_days': 1
+                'satisfaction_score': 9,
+                'support_tickets': 0,
+                'avg_session_time': 12.5,
+                'last_3_month_purchase_freq': 12,
+                'total_spent': 2500,
+                'is_premium_user': 1,
+                'delivery_delay_days': 1,
+                'age': 35,
+                'total_visits': 150,
+                'nps_score': 100
             }
     with col_s4:
         if st.button("🔄 Reset", use_container_width=True):
@@ -359,44 +376,19 @@ with tab1:
                     <th class="churn-header">Nilai</th>
                     <th class="churn-header">Keterangan</th>
                 </tr>
-                <tr>
-                    <td>⭐ Skor Kepuasan</td>
-                    <td><span class="guide-value churn-value">1-3</span></td>
-                    <td>Sangat tidak puas</td>
-                </tr>
-                <tr>
-                    <td>🎫 Tiket Support</td>
-                    <td><span class="guide-value churn-value">5-10</span></td>
-                    <td>Banyak komplain</td>
-                </tr>
-                <tr>
-                    <td>⏱️ Rata-rata Sesi</td>
-                    <td><span class="guide-value churn-value">0.5-2</span></td>
-                    <td>Sangat singkat</td>
-                </tr>
-                <tr>
-                    <td>🛍️ Frekuensi Pembelian</td>
-                    <td><span class="guide-value churn-value">0-1</span></td>
-                    <td>Jarang beli</td>
-                </tr>
-                <tr>
-                    <td>💰 Total Pengeluaran</td>
-                    <td><span class="guide-value churn-value">0-50</span></td>
-                    <td>Sedikit belanja</td>
-                </tr>
-                <tr>
-                    <td>👑 Premium User</td>
-                    <td><span class="guide-value churn-value">0</span></td>
-                    <td>Tidak premium</td>
-                </tr>
-                <tr>
-                    <td>📦 Keterlambatan Kirim</td>
-                    <td><span class="guide-value churn-value">10-20</span></td>
-                    <td>Sering telat</td>
-                </tr>
+                <tr><td>⭐ Skor Kepuasan</td><td><span class="guide-value churn-value">1-3</span></td><td>Sangat tidak puas</td></tr>
+                <tr><td>🎫 Tiket Support</td><td><span class="guide-value churn-value">5-10</span></td><td>Banyak komplain</td></tr>
+                <tr><td>⏱️ Rata-rata Sesi</td><td><span class="guide-value churn-value">0.5-2</span></td><td>Sangat singkat</td></tr>
+                <tr><td>🛍️ Frekuensi Pembelian</td><td><span class="guide-value churn-value">0-1</span></td><td>Jarang beli</td></tr>
+                <tr><td>💰 Total Pengeluaran</td><td><span class="guide-value churn-value">0-50</span></td><td>Sedikit belanja</td></tr>
+                <tr><td>👑 Premium User</td><td><span class="guide-value churn-value">0</span></td><td>Tidak premium</td></tr>
+                <tr><td>📦 Keterlambatan Kirim</td><td><span class="guide-value churn-value">10-20</span></td><td>Sering telat</td></tr>
+                <tr><td>🧑 Usia</td><td><span class="guide-value churn-value">18-25</span></td><td>Usia muda</td></tr>
+                <tr><td>👀 Total Kunjungan</td><td><span class="guide-value churn-value">1-5</span></td><td>Jarang berkunjung</td></tr>
+                <tr><td>📊 NPS Score</td><td><span class="guide-value churn-value">-100</span></td><td>Tidak loyal</td></tr>
             </table>
             <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #555;">
-                📋 <b>Contoh:</b> Skor=1, Support=10, Sesi=0.5, Beli=0, Pengeluaran=10, Premium=0, Telat=20
+                📋 <b>Contoh:</b> Skor=1, Support=10, Sesi=0.5, Beli=0, Pengeluaran=10, Premium=0, Telat=20, Usia=18, Kunjungan=1, NPS=-100
             </p>
         </div>
         
@@ -408,44 +400,19 @@ with tab1:
                     <th class="nochurn-header">Nilai</th>
                     <th class="nochurn-header">Keterangan</th>
                 </tr>
-                <tr>
-                    <td>⭐ Skor Kepuasan</td>
-                    <td><span class="guide-value nochurn-value">8-10</span></td>
-                    <td>Sangat puas</td>
-                </tr>
-                <tr>
-                    <td>🎫 Tiket Support</td>
-                    <td><span class="guide-value nochurn-value">0-1</span></td>
-                    <td>Tidak ada keluhan</td>
-                </tr>
-                <tr>
-                    <td>⏱️ Rata-rata Sesi</td>
-                    <td><span class="guide-value nochurn-value">8-15</span></td>
-                    <td>Lama berkunjung</td>
-                </tr>
-                <tr>
-                    <td>🛍️ Frekuensi Pembelian</td>
-                    <td><span class="guide-value nochurn-value">8-15</span></td>
-                    <td>Sering beli</td>
-                </tr>
-                <tr>
-                    <td>💰 Total Pengeluaran</td>
-                    <td><span class="guide-value nochurn-value">1000-5000</span></td>
-                    <td>Banyak belanja</td>
-                </tr>
-                <tr>
-                    <td>👑 Premium User</td>
-                    <td><span class="guide-value nochurn-value">1</span></td>
-                    <td>Premium</td>
-                </tr>
-                <tr>
-                    <td>📦 Keterlambatan Kirim</td>
-                    <td><span class="guide-value nochurn-value">0-2</span></td>
-                    <td>Tepat waktu</td>
-                </tr>
+                <tr><td>⭐ Skor Kepuasan</td><td><span class="guide-value nochurn-value">8-10</span></td><td>Sangat puas</td></tr>
+                <tr><td>🎫 Tiket Support</td><td><span class="guide-value nochurn-value">0-1</span></td><td>Tidak ada keluhan</td></tr>
+                <tr><td>⏱️ Rata-rata Sesi</td><td><span class="guide-value nochurn-value">8-15</span></td><td>Lama berkunjung</td></tr>
+                <tr><td>🛍️ Frekuensi Pembelian</td><td><span class="guide-value nochurn-value">8-15</span></td><td>Sering beli</td></tr>
+                <tr><td>💰 Total Pengeluaran</td><td><span class="guide-value nochurn-value">1000-5000</span></td><td>Banyak belanja</td></tr>
+                <tr><td>👑 Premium User</td><td><span class="guide-value nochurn-value">1</span></td><td>Premium</td></tr>
+                <tr><td>📦 Keterlambatan Kirim</td><td><span class="guide-value nochurn-value">0-2</span></td><td>Tepat waktu</td></tr>
+                <tr><td>🧑 Usia</td><td><span class="guide-value nochurn-value">30-50</span></td><td>Usia dewasa</td></tr>
+                <tr><td>👀 Total Kunjungan</td><td><span class="guide-value nochurn-value">50-200</span></td><td>Sering berkunjung</td></tr>
+                <tr><td>📊 NPS Score</td><td><span class="guide-value nochurn-value">50-100</span></td><td>Sangat loyal</td></tr>
             </table>
             <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #555;">
-                📋 <b>Contoh:</b> Skor=9, Support=0, Sesi=12.5, Beli=12, Pengeluaran=2500, Premium=1, Telat=1
+                📋 <b>Contoh:</b> Skor=9, Support=0, Sesi=12.5, Beli=12, Pengeluaran=2500, Premium=1, Telat=1, Usia=35, Kunjungan=150, NPS=100
             </p>
         </div>
         
@@ -456,7 +423,7 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
 
-    # ── 7 FITUR ──
+    # ── 10 FITUR ──
     FEATURES = {
         'satisfaction_score': {'min': 1, 'max': 10, 'default': 7, 'label': '⭐ Skor Kepuasan (1-10)', 'step': 1},
         'support_tickets': {'min': 0, 'max': 20, 'default': 1, 'label': '🎫 Tiket Support', 'step': 1},
@@ -465,6 +432,9 @@ with tab1:
         'total_spent': {'min': 0.0, 'max': 10000.0, 'default': 500.0, 'label': '💰 Total Pengeluaran ($)', 'step': 10.0},
         'is_premium_user': {'min': 0, 'max': 1, 'default': 1, 'label': '👑 Premium User (0/1)', 'step': 1},
         'delivery_delay_days': {'min': 0, 'max': 30, 'default': 6, 'label': '📦 Keterlambatan Kirim (hari)', 'step': 1},
+        'age': {'min': 18, 'max': 80, 'default': 35, 'label': '🧑 Usia (tahun)', 'step': 1},
+        'total_visits': {'min': 0, 'max': 500, 'default': 50, 'label': '👀 Total Kunjungan', 'step': 1},
+        'nps_score': {'min': -100, 'max': 100, 'default': 30, 'label': '📊 NPS Score (-100 - 100)', 'step': 1},
     }
 
     user_input = {}
@@ -473,10 +443,13 @@ with tab1:
             if k in FEATURES:
                 FEATURES[k]['default'] = v
 
+    # ── RENDER 2 KOLOM ──
     c1, c2 = st.columns(2)
+    
+    # Kiri: 5 fitur pertama
     with c1:
-        st.markdown('<div class="card-section"><div class="card-title">📊 Fitur Utama <span class="badge">4</span></div>', unsafe_allow_html=True)
-        for k in ['satisfaction_score', 'support_tickets', 'avg_session_time', 'last_3_month_purchase_freq']:
+        st.markdown('<div class="card-section"><div class="card-title">📊 Fitur Utama <span class="badge">5</span></div>', unsafe_allow_html=True)
+        for k in ['satisfaction_score', 'support_tickets', 'avg_session_time', 'last_3_month_purchase_freq', 'total_spent']:
             f = FEATURES[k]
             if isinstance(f['default'], float):
                 user_input[k] = st.number_input(f['label'], min_value=float(f['min']), max_value=float(f['max']), value=float(f['default']), step=float(f['step']), key=f"a_{k}")
@@ -484,9 +457,10 @@ with tab1:
                 user_input[k] = st.number_input(f['label'], min_value=int(f['min']), max_value=int(f['max']), value=int(f['default']), step=int(f['step']), key=f"a_{k}")
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # Kanan: 5 fitur sisanya
     with c2:
-        st.markdown('<div class="card-section"><div class="card-title">💰 Fitur Tambahan <span class="badge">3</span></div>', unsafe_allow_html=True)
-        for k in ['total_spent', 'is_premium_user', 'delivery_delay_days']:
+        st.markdown('<div class="card-section"><div class="card-title">💰 Fitur Tambahan <span class="badge">5</span></div>', unsafe_allow_html=True)
+        for k in ['is_premium_user', 'delivery_delay_days', 'age', 'total_visits', 'nps_score']:
             f = FEATURES[k]
             if isinstance(f['default'], float):
                 user_input[k] = st.number_input(f['label'], min_value=float(f['min']), max_value=float(f['max']), value=float(f['default']), step=float(f['step']), key=f"b_{k}")
@@ -495,42 +469,10 @@ with tab1:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ─────────────────────────────────────────────────────────────
-    # PREPROCESS INPUT - FIXED
+    # PREPROCESS INPUT
     # ─────────────────────────────────────────────────────────────
     def preprocess_input(raw: dict) -> np.ndarray:
-        """
-        Preprocess input user.
-        Untuk fitur yang tidak diisi, gunakan nilai default CHURN.
-        """
-        # Default values untuk CHURN (ekstrim)
-        default_churn = {
-            'age': 18,
-            'total_visits': 1,
-            'nps_score': -100,
-            'pages_per_session': 1,
-            'email_open_rate': 0.0,
-            'email_click_rate': 0.0,
-            'refund_requested': 5,
-            'avg_order_value': 5,
-            'discount_used': 0,
-            'marketing_spend_per_user': 0,
-            'lifetime_value': 10,
-            'country': 0,
-            'city': 0,
-            'acquisition_channel': 0,
-            'device_type': 0,
-            'subscription_type': 0,
-            'payment_method': 0,
-            'gender': 0
-        }
-        
-        ordered = []
-        for f in top_feat:
-            if f in raw:
-                ordered.append(raw[f])
-            else:
-                ordered.append(default_churn.get(f, 0))
-        
+        ordered = [raw.get(f, 0) for f in top_feat]
         df = pd.DataFrame([ordered], columns=top_feat)
         return scaler.transform(df)
 
@@ -587,6 +529,8 @@ with tab1:
                         recs.append("🛍️ Kirim penawaran khusus — pembelian rendah")
                     if user_input.get('delivery_delay_days', 0) > 5:
                         recs.append("🚚 Perbaiki pengiriman — keterlambatan tinggi")
+                    if user_input.get('nps_score', 0) < 0:
+                        recs.append("📊 Tingkatkan NPS — pelanggan tidak loyal")
                     if not recs:
                         recs.append("🔄 Jalankan program retensi")
                     for r in recs:
@@ -609,16 +553,19 @@ with tab1:
 # TAB 2: BATCH PREDICTION
 # =============================================================================
 with tab2:
-    st.markdown('<div class="info-box">📊 <strong>Upload file CSV</strong> untuk prediksi batch. File harus memiliki 7 kolom fitur.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">📊 <strong>Upload file CSV</strong> untuk prediksi batch. File harus memiliki 10 kolom fitur.</div>', unsafe_allow_html=True)
     
     template_df = pd.DataFrame({
-        'satisfaction_score': [7, 2],
-        'support_tickets': [1, 8],
-        'avg_session_time': [5.0, 1.2],
+        'satisfaction_score': [7, 1],
+        'support_tickets': [1, 10],
+        'avg_session_time': [5.0, 0.5],
         'last_3_month_purchase_freq': [3, 0],
-        'total_spent': [500, 50],
+        'total_spent': [500, 10],
         'is_premium_user': [1, 0],
-        'delivery_delay_days': [6, 12]
+        'delivery_delay_days': [6, 20],
+        'age': [35, 18],
+        'total_visits': [50, 1],
+        'nps_score': [30, -100]
     })
     st.download_button("📥 Download Template CSV", template_df.to_csv(index=False), "churn_template.csv", "text/csv", use_container_width=True)
     
@@ -629,7 +576,8 @@ with tab2:
             st.success(f"✅ {len(batch_df)} baris data")
             
             required = ['satisfaction_score', 'support_tickets', 'avg_session_time', 
-                       'last_3_month_purchase_freq', 'total_spent', 'is_premium_user', 'delivery_delay_days']
+                       'last_3_month_purchase_freq', 'total_spent', 'is_premium_user', 
+                       'delivery_delay_days', 'age', 'total_visits', 'nps_score']
             missing = [c for c in required if c not in batch_df.columns]
             if missing:
                 st.error(f"❌ Kolom hilang: {missing}")
@@ -667,10 +615,7 @@ with tab2:
                         st.plotly_chart(fig, use_container_width=True)
                     with col_chart2:
                         fig = px.histogram(batch_df, x='prob_churn', nbins=20, title="Probabilitas Churn")
-                        fig.update_layout(
-                            xaxis_title="Probabilitas (%)",
-                            yaxis_title="Jumlah"
-                        )
+                        fig.update_layout(xaxis_title="Probabilitas (%)", yaxis_title="Jumlah")
                         st.plotly_chart(fig, use_container_width=True)
                     
                     st.download_button(
@@ -681,32 +626,4 @@ with tab2:
                         use_container_width=True
                     )
                     
-        except Exception as e:
-            st.error(f"❌ Error: {e}")
-
-# =============================================================================
-# TAB 3: DASHBOARD
-# =============================================================================
-with tab3:
-    st.markdown('<div class="info-box">📈 <strong>Dashboard Prediksi</strong> — Ringkasan semua prediksi.</div>', unsafe_allow_html=True)
-    
-    if 'prediction_log' in st.session_state and len(st.session_state.prediction_log) > 0:
-        log_df = pd.DataFrame(st.session_state.prediction_log)
-        
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("📊 Total", len(log_df))
-        with col2:
-            churn = log_df[log_df['prediction'] == 1].shape[0]
-            st.metric("⚠️ CHURN", churn, delta=f"{churn/len(log_df)*100:.1f}%")
-        with col3:
-            st.metric("✅ TIDAK CHURN", len(log_df) - churn)
-        with col4:
-            st.metric("📈 Rata-rata Risiko", f"{log_df['prob_churn'].mean():.1f}%")
-        
-        col_chart1, col_chart2 = st.columns(2)
-        
-        with col_chart1:
-            labels = ['TIDAK CHURN', 'CHURN']
-            values = [len(log_df) - churn, churn]
-            fig = px.pie
+       
