@@ -15,6 +15,7 @@ import matplotlib.gridspec as gridspec
 import seaborn as sns
 import pickle
 import os
+from imblearn.over_sampling import SMOTE
 from pathlib import Path
 
 # Sklearn - Preprocessing
@@ -308,7 +309,7 @@ print(f"\n   Train: {X_tr_d.shape}  |  Test: {X_te_d.shape}")
 # ── 2.2 Definisi 3 Model ─────────────────────────────────────
 models_direct = {
     'Logistic Regression': LogisticRegression(max_iter=500, random_state=RANDOM_STATE),
-    'Random Forest'      : RandomForestClassifier(n_estimators=100, random_state=RANDOM_STATE),
+    'Random Forest'      : RandomForestClassifier(random_state=RANDOM_STATE, class_weight="balanced",n_estimators=300,max_depth=15),
     'Voting Classifier'  : VotingClassifier(
         estimators=[
             ('lr', LogisticRegression(max_iter=500, random_state=RANDOM_STATE)),
@@ -445,7 +446,13 @@ feature_names_prep = X_prep.columns.tolist()  # simpan untuk nanti
 X_tr_p, X_te_p, y_tr_p, y_te_p = train_test_split(
     X_prep, y_prep, test_size=0.2, random_state=RANDOM_STATE, stratify=y_prep
 )
+sm = SMOTE(random_state=42)
 
+X_train,
+y_train = sm.fit_resample(
+    X_train,
+    y_train
+)
 # ── 3.7 Scaling (setelah split) ──────────────────────────────
 scaler = StandardScaler()
 X_tr_p_sc = scaler.fit_transform(X_tr_p)
@@ -458,7 +465,7 @@ print(f"\n[3.6-3.7] Train: {X_tr_p_sc.shape}  |  Test: {X_te_p_sc.shape}")
 # ── 3.8 Latih 3 Model (dengan Preprocessing) ─────────────────
 models_prep = {
     'Logistic Regression': LogisticRegression(max_iter=500, random_state=RANDOM_STATE),
-    'Random Forest'      : RandomForestClassifier(n_estimators=100, random_state=RANDOM_STATE),
+    'Random Forest'      : RandomForestClassifier(random_state=RANDOM_STATE, class_weight="balanced",n_estimators=300,max_depth=15),
     'Voting Classifier'  : VotingClassifier(
         estimators=[
             ('lr', LogisticRegression(max_iter=500, random_state=RANDOM_STATE)),
@@ -564,7 +571,7 @@ cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STAT
 
 param_grids = {
     'Logistic Regression': {
-        'model': LogisticRegression(max_iter=1000, random_state=RANDOM_STATE),
+        'model': LogisticRegression(max_iter=1000, random_state=RANDOM_STATE,class_weight="balanced"),
         'params': {
             'C'      : [0.01, 0.1, 1, 10],
             'solver' : ['lbfgs', 'liblinear'],
@@ -572,7 +579,7 @@ param_grids = {
         }
     },
     'Random Forest': {
-        'model': RandomForestClassifier(random_state=RANDOM_STATE),
+        'model': RandomForestClassifier(random_state=RANDOM_STATE, class_weight="balanced",n_estimators=300,max_depth=15),
         'params': {
             'n_estimators'     : [50, 100, 200],
             'max_depth'        : [None, 10, 20],
@@ -583,7 +590,7 @@ param_grids = {
     'Voting Classifier': {
         'model': VotingClassifier(
             estimators=[
-                ('lr',  LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)),
+                ('lr',  LogisticRegression(max_iter=1000, random_state=RANDOM_STATE,class_weight="balanced")),
                 ('svm', SVC(probability=True, random_state=RANDOM_STATE)),
                 ('knn', KNeighborsClassifier())
             ],
