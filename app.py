@@ -1,5 +1,5 @@
 # =============================================================================
-# app.py - Churn Prediction ULTIMATE (LENGKAP + PANDUAN)
+# app.py - Churn Prediction ULTIMATE (LENGKAP + PANDUAN - FIXED)
 # =============================================================================
 
 import streamlit as st
@@ -684,4 +684,4 @@ with tab3:
             st.dataframe(log_df, use_container_width=True)
             st.download_button("📥 Download Riwayat", log_df.to_csv(index=False), f"history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "text/csv", use_container_width=True)
     else:
-        st.info("Belum ada data. L
+        st.info("Belum ada data. Lakukan prediksi dulu
