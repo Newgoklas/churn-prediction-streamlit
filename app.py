@@ -1,5 +1,6 @@
 # =============================================================================
-# app.py - Streamlit Deployment: Churn Prediction (MODERN UI)
+# app.py - Streamlit Deployment: Churn Prediction (MINIMALIS)
+# Hanya 7 fitur terpenting agar mudah diisi
 # =============================================================================
 
 import streamlit as st
@@ -12,7 +13,7 @@ from pathlib import Path
 # Konfigurasi Halaman
 # ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Churn Predictor | Sales & Marketing",
+    page_title="Churn Predictor",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -23,18 +24,11 @@ st.set_page_config(
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* ── Global ── */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
-    * {
-        font-family: 'Inter', sans-serif;
-    }
+    * { font-family: 'Inter', sans-serif; }
+    .stApp { background: #f0f4f8; }
     
-    .stApp {
-        background: #f0f4f8;
-    }
-    
-    /* ── Header ── */
     .main-header {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
         padding: 2rem 2rem 1.5rem 2rem;
@@ -42,30 +36,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 1.5rem;
         box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .main-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 300px;
-        height: 300px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 50%;
-    }
-    
-    .main-header::after {
-        content: '';
-        position: absolute;
-        bottom: -40%;
-        left: -10%;
-        width: 200px;
-        height: 200px;
-        background: rgba(255,255,255,0.02);
-        border-radius: 50%;
     }
     
     .main-header h1 {
@@ -74,17 +44,12 @@ st.markdown("""
         color: #ffffff;
         margin: 0;
         letter-spacing: -0.5px;
-        position: relative;
-        z-index: 1;
     }
     
     .main-header p {
         font-size: 1rem;
         color: rgba(255,255,255,0.7);
         margin: 0.3rem 0 0 0;
-        font-weight: 400;
-        position: relative;
-        z-index: 1;
     }
     
     .header-badge {
@@ -95,25 +60,17 @@ st.markdown("""
         font-size: 0.7rem;
         color: rgba(255,255,255,0.8);
         margin-top: 0.5rem;
-        position: relative;
-        z-index: 1;
         backdrop-filter: blur(4px);
         border: 1px solid rgba(255,255,255,0.06);
     }
     
-    /* ── Card Section ── */
     .card-section {
         background: #ffffff;
         border-radius: 16px;
-        padding: 1.5rem 1.5rem 1rem 1.5rem;
+        padding: 1.5rem;
         box-shadow: 0 4px 20px rgba(0,0,0,0.04);
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 1rem;
-        transition: box-shadow 0.3s ease;
-    }
-    
-    .card-section:hover {
-        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
     }
     
     .card-title {
@@ -124,12 +81,8 @@ st.markdown("""
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        letter-spacing: 0.3px;
         text-transform: uppercase;
-    }
-    
-    .card-title .icon {
-        font-size: 1.2rem;
+        letter-spacing: 0.3px;
     }
     
     .card-title .badge-count {
@@ -142,7 +95,6 @@ st.markdown("""
         margin-left: auto;
     }
     
-    /* ── Form Input ── */
     .stNumberInput > div > div > input,
     .stSelectbox > div > div > div {
         border-radius: 10px !important;
@@ -164,7 +116,6 @@ st.markdown("""
         color: #4a4a6a !important;
     }
     
-    /* ── Button ── */
     .stButton > button {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
         color: white !important;
@@ -175,31 +126,22 @@ st.markdown("""
         border: none !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 15px rgba(26,26,46,0.25) !important;
-        letter-spacing: 0.3px;
     }
     
     .stButton > button:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 8px 30px rgba(26,26,46,0.35) !important;
-        background: linear-gradient(135deg, #2a2a4e 0%, #1a2a4e 100%) !important;
     }
     
-    .stButton > button:active {
-        transform: translateY(0px) !important;
-    }
-    
-    /* ── Result Cards ── */
     .result-churn {
         background: linear-gradient(135deg, #ff6b6b, #ee5a24);
         color: white;
-        padding: 2rem 2rem;
+        padding: 2rem;
         border-radius: 16px;
         text-align: center;
         font-size: 1.8rem;
         font-weight: 700;
         box-shadow: 0 8px 30px rgba(238,90,36,0.35);
-        border: 1px solid rgba(255,255,255,0.1);
-        backdrop-filter: blur(4px);
     }
     
     .result-churn .sub {
@@ -213,14 +155,12 @@ st.markdown("""
     .result-ok {
         background: linear-gradient(135deg, #00b894, #00a86b);
         color: white;
-        padding: 2rem 2rem;
+        padding: 2rem;
         border-radius: 16px;
         text-align: center;
         font-size: 1.8rem;
         font-weight: 700;
         box-shadow: 0 8px 30px rgba(0,184,148,0.35);
-        border: 1px solid rgba(255,255,255,0.1);
-        backdrop-filter: blur(4px);
     }
     
     .result-ok .sub {
@@ -231,13 +171,11 @@ st.markdown("""
         margin-top: 0.3rem;
     }
     
-    /* ── Metrics ── */
     .metric-box {
         background: #f8fafc;
         border-radius: 12px;
-        padding: 1.2rem 1.2rem;
+        padding: 1.2rem;
         border-left: 4px solid #1a1a2e;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         border: 1px solid #eef2f6;
     }
     
@@ -255,7 +193,6 @@ st.markdown("""
         color: #1a1a2e;
     }
     
-    /* ── Info Box ── */
     .info-box {
         background: linear-gradient(135deg, #e8f4fd, #d6eaf8);
         border-radius: 12px;
@@ -264,20 +201,8 @@ st.markdown("""
         margin-bottom: 1.2rem;
         font-size: 0.9rem;
         color: #1a3a5a;
-        border: 1px solid rgba(26,115,232,0.1);
     }
     
-    /* ── Sidebar ── */
-    .css-1d391kg {
-        background: #ffffff !important;
-        border-right: 1px solid #eef2f6 !important;
-    }
-    
-    .css-1d391kg .stMarkdown {
-        color: #1a1a2e;
-    }
-    
-    /* ── Progress Bar ── */
     .stProgress > div > div {
         background: linear-gradient(90deg, #00b894, #00a86b) !important;
         border-radius: 20px !important;
@@ -289,30 +214,6 @@ st.markdown("""
         border-radius: 20px !important;
     }
     
-    /* ── Expander ── */
-    .streamlit-expanderHeader {
-        font-weight: 500 !important;
-        color: #1a1a2e !important;
-        background: #f8fafc !important;
-        border-radius: 10px !important;
-        border: 1px solid #eef2f6 !important;
-    }
-    
-    .streamlit-expanderContent {
-        background: #ffffff !important;
-        border-radius: 0 0 10px 10px !important;
-        border: 1px solid #eef2f6 !important;
-        border-top: none !important;
-    }
-    
-    /* ── Divider ── */
-    .custom-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #e0e6ed, transparent);
-        margin: 1.5rem 0;
-    }
-    
-    /* ── Footer ── */
     .footer {
         text-align: center;
         font-size: 0.75rem;
@@ -325,7 +226,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# Load Model & Artefak
+# Load Model
 # ─────────────────────────────────────────────────────────────
 MODEL_DIR = Path("models")
 
@@ -334,260 +235,167 @@ def load_artifacts():
     artifacts = {}
     files_needed = {
         'model': MODEL_DIR / 'best_model.pkl',
-        'scaler_top': MODEL_DIR / 'scaler_top.pkl',
         'scaler': MODEL_DIR / 'scaler.pkl',
         'label_enc': MODEL_DIR / 'label_encoders.pkl',
         'top_feat': MODEL_DIR / 'top_features.pkl',
         'all_feat': MODEL_DIR / 'all_features.pkl',
         'metadata': MODEL_DIR / 'model_metadata.pkl',
     }
-    missing = []
-    corrupt = []
     
     for key, path in files_needed.items():
         if path.exists():
             try:
                 artifacts[key] = joblib.load(path)
-            except Exception as e:
-                corrupt.append(f"{path} ({str(e)[:80]})")
+            except:
                 artifacts[key] = None
         else:
-            missing.append(str(path))
-
-    if corrupt:
-        st.error("⚠️ File model corrupt! Jalankan ulang `main.py` di local.")
-        for c in corrupt:
-            st.write(f"  ❌ {c}")
-        st.stop()
+            artifacts[key] = None
     
-    if missing:
-        artifacts['_missing'] = missing
     return artifacts
 
 arts = load_artifacts()
 
-if '_missing' in arts:
-    st.error("⚠️ Beberapa file model tidak ditemukan. Jalankan `python main.py` terlebih dahulu!")
-    st.code("python main.py", language="bash")
-    for f in arts['_missing']:
-        st.write(f"  ❌ `{f}`")
-    st.stop()
-
 if arts.get('model') is None:
-    st.error("❌ Model corrupt! Jalankan ulang `main.py`.")
+    st.error("❌ Model tidak ditemukan. Jalankan `python main.py` terlebih dahulu!")
     st.stop()
 
 model = arts['model']
-scaler = arts.get('scaler_top') or arts.get('scaler')
+scaler = arts['scaler']
 le_map = arts.get('label_enc', {})
 top_feat = arts.get('top_feat', [])
 all_feat = arts.get('all_feat', [])
 meta = arts.get('metadata', {})
 
 # ─────────────────────────────────────────────────────────────
-# HEADER MODERN
+# HEADER
 # ─────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="main-header">
     <h1>📊 Customer Churn Predictor</h1>
-    <p>Prediksi kemungkinan churn customer menggunakan machine learning</p>
-    <div class="header-badge">🎯 Akurasi {meta.get('test_accuracy', 0.8923):.1%} · F1 {meta.get('test_f1', 0.8323):.3f}</div>
+    <p>Prediksi churn customer dengan 7 fitur utama</p>
+    <div class="header-badge">🎯 Akurasi {meta.get('test_accuracy', 0.8923):.1%} · Hanya 7 fitur</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# SIDEBAR MODERN
+# SIDEBAR
 # ─────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### 🧠 Model Info")
-    
     st.markdown(f"""
     <div class="metric-box">
         <div class="label">Model</div>
         <div class="value">{meta.get('best_model_name', 'Voting Ensemble')}</div>
         <div style="margin-top:0.5rem;"></div>
-        <div class="label">Test Accuracy</div>
+        <div class="label">Akurasi</div>
         <div class="value">{meta.get('test_accuracy', 0.8923):.2%}</div>
         <div style="margin-top:0.5rem;"></div>
-        <div class="label">Test F1-Score</div>
+        <div class="label">F1-Score</div>
         <div class="value">{meta.get('test_f1', 0.8323):.2%}</div>
-        <div style="margin-top:0.5rem;"></div>
-        <div class="label">Fitur Terbaik</div>
-        <div class="value">Top {len(top_feat)}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### 📌 Fitur Terpenting")
-    for i, feat in enumerate(top_feat[:8], 1):
-        st.markdown(f"`{i}. {feat}`")
+    st.markdown("### 📌 7 Fitur Utama")
+    st.markdown("""
+    1. ⭐ Skor Kepuasan
+    2. 🎫 Tiket Support
+    3. ⏱️ Rata-rata Sesi
+    4. 🛍️ Frekuensi Pembelian
+    5. 💰 Total Pengeluaran
+    6. 👑 Premium User
+    7. 📦 Keterlambatan Kirim
+    """)
     
     st.divider()
     st.markdown("""
     **📖 Panduan**
-    1. Isi data customer di form
+    1. Isi 7 data di bawah
     2. Klik **Prediksi Churn**
-    3. Lihat hasil & rekomendasi
+    3. Lihat hasil
     """)
 
 # ─────────────────────────────────────────────────────────────
-# FORM INPUT MODERN
+# FORM INPUT (HANYA 7 FITUR)
 # ─────────────────────────────────────────────────────────────
-st.markdown('<div class="info-box">💡 Isi data customer untuk memprediksi kemungkinan churn.</div>', unsafe_allow_html=True)
+st.markdown('<div class="info-box">💡 Isi 7 data berikut untuk memprediksi churn. Hanya 1 menit!</div>', unsafe_allow_html=True)
 
-# ── FEATURE CONFIG ──
-FEATURE_CONFIG = {
-    # Demografi
-    'age': {'type': 'number', 'min': 18, 'max': 80, 'default': 35, 'label': '🧑 Usia', 'step': 1, 'section': 'demografi'},
-    'gender': {'type': 'select', 'options': ['Male', 'Female', 'Other'], 'default': 'Female', 'label': '👤 Gender', 'section': 'demografi'},
-    'country': {'type': 'select', 'options': ['USA','UK','Germany','France','India','Australia','Canada','Brazil'], 'default': 'Brazil', 'label': '🌍 Negara', 'section': 'demografi'},
-    'city': {'type': 'select', 'options': ['New York','London','Berlin','Paris','Mumbai','Sydney','Toronto','São Paulo'], 'default': 'Mumbai', 'label': '🏙️ Kota', 'section': 'demografi'},
-    
-    # Aktivitas
-    'total_visits': {'type': 'number', 'min': 0, 'max': 500, 'default': 50, 'label': '👀 Total Kunjungan', 'step': 1, 'section': 'aktivitas'},
-    'avg_session_time': {'type': 'float', 'min': 0.0, 'max': 60.0, 'default': 5.0, 'label': '⏱️ Rata-rata Sesi (menit)', 'step': 0.1, 'section': 'aktivitas'},
-    'pages_per_session': {'type': 'number', 'min': 1, 'max': 50, 'default': 5, 'label': '📄 Halaman per Sesi', 'step': 1, 'section': 'aktivitas'},
-    'device_type': {'type': 'select', 'options': ['Mobile','Desktop','Tablet'], 'default': 'Mobile', 'label': '📱 Perangkat', 'section': 'aktivitas'},
-    'acquisition_channel': {'type': 'select', 'options': ['Organic','Paid','Referral','Social','Email'], 'default': 'Referral', 'label': '📢 Channel', 'section': 'aktivitas'},
-    
-    # Email
-    'email_open_rate': {'type': 'float', 'min': 0.0, 'max': 1.0, 'default': 0.30, 'label': '📧 Email Open Rate', 'step': 0.01, 'section': 'email'},
-    'email_click_rate': {'type': 'float', 'min': 0.0, 'max': 1.0, 'default': 0.10, 'label': '🖱️ Email Click Rate', 'step': 0.01, 'section': 'email'},
-    
-    # Pembelian
-    'total_spent': {'type': 'float', 'min': 0.0, 'max': 10000.0, 'default': 500.0, 'label': '💰 Total Pengeluaran ($)', 'step': 1.0, 'section': 'pembelian'},
-    'avg_order_value': {'type': 'float', 'min': 0.0, 'max': 2000.0, 'default': 100.0, 'label': '🛒 Rata-rata Order ($)', 'step': 1.0, 'section': 'pembelian'},
-    'discount_used': {'type': 'number', 'min': 0, 'max': 50, 'default': 3, 'label': '🏷️ Diskon Dipakai', 'step': 1, 'section': 'pembelian'},
-    'last_3_month_purchase_freq': {'type': 'number', 'min': 0, 'max': 30, 'default': 3, 'label': '🛍️ Frekuensi Pembelian 3 Bulan', 'step': 1, 'section': 'pembelian'},
-    
-    # Dukungan
-    'support_tickets': {'type': 'number', 'min': 0, 'max': 20, 'default': 1, 'label': '🎫 Tiket Support', 'step': 1, 'section': 'dukungan'},
-    'refund_requested': {'type': 'number', 'min': 0, 'max': 10, 'default': 0, 'label': '↩️ Refund Diminta', 'step': 1, 'section': 'dukungan'},
-    'delivery_delay_days': {'type': 'number', 'min': 0, 'max': 30, 'default': 6, 'label': '📦 Keterlambatan Pengiriman (hari)', 'step': 1, 'section': 'dukungan'},
-    'satisfaction_score': {'type': 'number', 'min': 1, 'max': 10, 'default': 7, 'label': '⭐ Skor Kepuasan (1-10)', 'step': 1, 'section': 'dukungan'},
-    'nps_score': {'type': 'number', 'min': -100, 'max': 100, 'default': 30, 'label': '📊 NPS Score', 'step': 1, 'section': 'dukungan'},
-    
-    # Keuangan
-    'marketing_spend_per_user': {'type': 'float', 'min': 0.0, 'max': 500.0, 'default': 30.0, 'label': '📢 Marketing Spend ($)', 'step': 0.5, 'section': 'keuangan'},
-    'lifetime_value': {'type': 'float', 'min': 0.0, 'max': 20000.0, 'default': 1500.0, 'label': '💎 Lifetime Value ($)', 'step': 10.0, 'section': 'keuangan'},
-    'is_premium_user': {'type': 'number', 'min': 0, 'max': 1, 'default': 1, 'label': '👑 Premium User', 'step': 1, 'section': 'keuangan'},
-    'subscription_type': {'type': 'select', 'options': ['Basic','Standard','Premium'], 'default': 'Standard', 'label': '📋 Tipe Langganan', 'section': 'keuangan'},
-    'payment_method': {'type': 'select', 'options': ['Credit Card','Debit Card','PayPal','Bank Transfer','Crypto'], 'default': 'Credit Card', 'label': '💳 Metode Pembayaran', 'section': 'keuangan'},
+user_input = {}
+
+# ── HANYA 7 FITUR TERPENTING ──
+FITUR_UTAMA = {
+    'satisfaction_score': {
+        'label': '⭐ Skor Kepuasan',
+        'help': 'Nilai 1-10, semakin tinggi semakin puas',
+        'default': 7, 'min': 1, 'max': 10, 'step': 1
+    },
+    'support_tickets': {
+        'label': '🎫 Tiket Support',
+        'help': 'Jumlah tiket yang pernah diajukan',
+        'default': 1, 'min': 0, 'max': 20, 'step': 1
+    },
+    'avg_session_time': {
+        'label': '⏱️ Rata-rata Sesi (menit)',
+        'help': 'Rata-rata waktu per sesi',
+        'default': 5.0, 'min': 0.0, 'max': 60.0, 'step': 0.1
+    },
+    'last_3_month_purchase_freq': {
+        'label': '🛍️ Frekuensi Pembelian 3 Bulan',
+        'help': 'Berapa kali pembelian 3 bulan terakhir',
+        'default': 3, 'min': 0, 'max': 30, 'step': 1
+    },
+    'total_spent': {
+        'label': '💰 Total Pengeluaran ($)',
+        'help': 'Total uang yang sudah dikeluarkan',
+        'default': 500.0, 'min': 0.0, 'max': 10000.0, 'step': 10.0
+    },
+    'is_premium_user': {
+        'label': '👑 Premium User',
+        'help': '0 = Tidak, 1 = Ya',
+        'default': 1, 'min': 0, 'max': 1, 'step': 1
+    },
+    'delivery_delay_days': {
+        'label': '📦 Keterlambatan Pengiriman (hari)',
+        'help': 'Rata-rata keterlambatan pengiriman',
+        'default': 6, 'min': 0, 'max': 30, 'step': 1
+    }
 }
 
 # ── RENDER FORM ──
-user_input = {}
+col1, col2 = st.columns(2)
 
-sections = {}
-for key, cfg in FEATURE_CONFIG.items():
-    section = cfg.get('section', 'lainnya')
-    if section not in sections:
-        sections[section] = []
-    sections[section].append(key)
-
-section_labels = {
-    'demografi': ('👤 Demografi', 6),
-    'aktivitas': ('📱 Aktivitas', 5),
-    'email': ('📧 Email', 2),
-    'pembelian': ('🛒 Pembelian', 4),
-    'dukungan': ('🎯 Dukungan & Kepuasan', 5),
-    'keuangan': ('💰 Keuangan & Langganan', 5)
-}
-
-col_left, col_right = st.columns(2)
-
-# Kiri
-with col_left:
-    for section in ['demografi', 'aktivitas', 'email']:
-        if section in sections:
-            label, count = section_labels.get(section, (section, 0))
-            st.markdown(f"""
-            <div class="card-section">
-                <div class="card-title">
-                    <span class="icon">{label.split()[0]}</span>
-                    {label.split()[1] if len(label.split()) > 1 else label}
-                    <span class="badge-count">{len(sections[section])}</span>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            for key in sections[section]:
-                cfg = FEATURE_CONFIG[key]
-                if cfg['type'] == 'select':
-                    user_input[key] = st.selectbox(
-                        cfg['label'], options=cfg['options'],
-                        index=cfg['options'].index(cfg['default']), key=f"cat_{key}"
-                    )
-                elif cfg['type'] == 'float':
-                    user_input[key] = st.number_input(
-                        cfg['label'], min_value=float(cfg['min']),
-                        max_value=float(cfg['max']), value=float(cfg['default']),
-                        step=float(cfg['step']), key=f"num_{key}"
-                    )
-                else:
-                    user_input[key] = st.number_input(
-                        cfg['label'], min_value=int(cfg['min']),
-                        max_value=int(cfg['max']), value=int(cfg['default']),
-                        step=int(cfg['step']), key=f"num_{key}"
-                    )
-            st.markdown("</div>", unsafe_allow_html=True)
-
-# Kanan
-with col_right:
-    for section in ['pembelian', 'dukungan', 'keuangan']:
-        if section in sections:
-            label, count = section_labels.get(section, (section, 0))
-            st.markdown(f"""
-            <div class="card-section">
-                <div class="card-title">
-                    <span class="icon">{label.split()[0]}</span>
-                    {label.split()[1] if len(label.split()) > 1 else label}
-                    <span class="badge-count">{len(sections[section])}</span>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            for key in sections[section]:
-                cfg = FEATURE_CONFIG[key]
-                if cfg['type'] == 'select':
-                    user_input[key] = st.selectbox(
-                        cfg['label'], options=cfg['options'],
-                        index=cfg['options'].index(cfg['default']), key=f"cat_{key}"
-                    )
-                elif cfg['type'] == 'float':
-                    user_input[key] = st.number_input(
-                        cfg['label'], min_value=float(cfg['min']),
-                        max_value=float(cfg['max']), value=float(cfg['default']),
-                        step=float(cfg['step']), key=f"num_{key}"
-                    )
-                else:
-                    user_input[key] = st.number_input(
-                        cfg['label'], min_value=int(cfg['min']),
-                        max_value=int(cfg['max']), value=int(cfg['default']),
-                        step=int(cfg['step']), key=f"num_{key}"
-                    )
-            st.markdown("</div>", unsafe_allow_html=True)
+for i, (key, cfg) in enumerate(FITUR_UTAMA.items()):
+    col = col1 if i % 2 == 0 else col2
+    with col:
+        if isinstance(cfg['default'], float):
+            user_input[key] = st.number_input(
+                cfg['label'],
+                min_value=float(cfg['min']),
+                max_value=float(cfg['max']),
+                value=float(cfg['default']),
+                step=float(cfg.get('step', 0.1)),
+                help=cfg.get('help', ''),
+                key=f"f_{key}"
+            )
+        else:
+            user_input[key] = st.number_input(
+                cfg['label'],
+                min_value=int(cfg['min']),
+                max_value=int(cfg['max']),
+                value=int(cfg['default']),
+                step=int(cfg.get('step', 1)),
+                help=cfg.get('help', ''),
+                key=f"f_{key}"
+            )
 
 # ─────────────────────────────────────────────────────────────
-# PREPROCESS & PREDICT
+# PREPROCESS
 # ─────────────────────────────────────────────────────────────
 def preprocess_input(raw_input: dict) -> np.ndarray:
     row = {}
     for key, val in raw_input.items():
-        if key in le_map:
-            try:
-                le = le_map[key]
-                val_str = str(val)
-                if hasattr(le, 'classes_'):
-                    classes = list(le.classes_)
-                    if val_str in classes:
-                        row[key] = le.transform([val_str])[0]
-                    else:
-                        row[key] = 0
-                else:
-                    row[key] = 0
-            except Exception:
-                row[key] = 0
-        else:
-            row[key] = val
+        row[key] = val
     
+    # Buat sesuai all_features
     ordered = []
     for feat in all_feat:
         if feat in row:
@@ -596,22 +404,25 @@ def preprocess_input(raw_input: dict) -> np.ndarray:
             ordered.append(0)
     
     df_input = pd.DataFrame([ordered], columns=all_feat)
+    
+    # Ambil top_features
     available_top = [f for f in top_feat if f in df_input.columns]
     df_top = df_input[available_top]
+    
     arr_scaled = scaler.transform(df_top)
     return arr_scaled
 
 # ─────────────────────────────────────────────────────────────
-# BUTTON PREDIKSI
+# BUTTON
 # ─────────────────────────────────────────────────────────────
 st.divider()
 
 col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 with col_btn2:
-    predict_btn = st.button("🔮 Prediksi Churn", use_container_width=True, type="primary")
+    predict_btn = st.button("🔮 Prediksi Churn", use_container_width=True)
 
 if predict_btn:
-    with st.spinner("⏳ Memproses data..."):
+    with st.spinner("⏳ Memproses..."):
         try:
             X_input = preprocess_input(user_input)
             prediction = model.predict(X_input)[0]
@@ -663,29 +474,24 @@ if predict_btn:
             if prediction == 1:
                 recs = []
                 if user_input.get('satisfaction_score', 10) < 6:
-                    recs.append("📞 **Hubungi pelanggan** — skor kepuasan rendah, lakukan survei follow-up.")
+                    recs.append("📞 **Hubungi pelanggan** — skor kepuasan rendah.")
                 if user_input.get('support_tickets', 0) > 3:
-                    recs.append("🔧 **Selesaikan tiket support** — ada banyak tiket yang belum terselesaikan.")
+                    recs.append("🔧 **Selesaikan tiket support** — terlalu banyak keluhan.")
                 if user_input.get('last_3_month_purchase_freq', 10) < 2:
-                    recs.append("🛍️ **Kirim penawaran khusus** — frekuensi pembelian rendah dalam 3 bulan terakhir.")
-                if user_input.get('discount_used', 5) < 1:
-                    recs.append("🎁 **Tawarkan diskon personal** — pelanggan belum pernah menggunakan diskon.")
-                if user_input.get('delivery_delay_days', 0) > 5:
-                    recs.append("🚚 **Perbaiki pengiriman** — keterlambatan pengiriman tinggi.")
+                    recs.append("🛍️ **Kirim penawaran khusus** — pembelian rendah.")
                 if user_input.get('avg_session_time', 0) < 3:
                     recs.append("⏱️ **Tingkatkan engagement** — sesi terlalu singkat.")
+                if user_input.get('delivery_delay_days', 0) > 5:
+                    recs.append("🚚 **Perbaiki pengiriman** — keterlambatan tinggi.")
                 if not recs:
-                    recs.append("🔄 **Jalankan program retensi** — kirim email personal dan tawarkan benefit eksklusif.")
-                
+                    recs.append("🔄 **Jalankan program retensi** — berikan insentif.")
                 for r in recs:
                     st.warning(r)
             else:
-                st.success("✅ Pelanggan dalam kondisi sehat. Pertahankan kualitas layanan dan lanjutkan program loyalitas.")
-                if user_input.get('is_premium_user', 0) == 0:
-                    st.info("💎 Pertimbangkan untuk menawarkan **upgrade ke Premium** kepada pelanggan ini.")
+                st.success("✅ Customer dalam kondisi sehat. Pertahankan kualitas!")
                 if user_input.get('satisfaction_score', 0) >= 9:
                     st.balloons()
-                    st.success("⭐ Pelanggan sangat puas! Pertahankan kualitas ini.")
+                    st.info("⭐ Pelanggan sangat puas! Pertahankan.")
 
             # ── DETAIL ──
             with st.expander("📄 Detail Data Input"):
@@ -702,6 +508,6 @@ if predict_btn:
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-    UAS Data Science · Sales & Marketing Churn Prediction · 2024
+    UAS Data Science · Churn Prediction · 7 Fitur Utama · 2024
 </div>
 """, unsafe_allow_html=True)
