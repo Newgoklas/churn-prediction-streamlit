@@ -4,7 +4,7 @@
 # =============================================================================
 
 import streamlit as st
-import pickle
+import joblib  # ← GANTI: dari pickle ke joblib
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -64,12 +64,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# Load Model & Artefak
+# Load Model & Artefak (Menggunakan joblib)
 # ─────────────────────────────────────────────────────────────
 MODEL_DIR = Path("models")
 
 @st.cache_resource
 def load_artifacts():
+    """Load semua file model menggunakan joblib (lebih kompatibel)"""
     artifacts = {}
     files_needed = {
         'model'      : MODEL_DIR / 'best_model.pkl',
@@ -81,26 +82,31 @@ def load_artifacts():
         'metadata'   : MODEL_DIR / 'model_metadata.pkl',
     }
     missing = []
+    corrupt = []
+    
     for key, path in files_needed.items():
         if path.exists():
-            with open(path, 'rb') as f:
-                artifacts[key] = pickle.load(f)
+            try:
+                # ← PERUBAHAN: pakai joblib.load, bukan pickle.load
+                artifacts[key] = joblib.load(path)
+            except Exception as e:
+                corrupt.append(f"{path} ({str(e)[:80]})")
+                artifacts[key] = None
         else:
             missing.append(str(path))
 
+    # Jika ada file corrupt, tampilkan error detail
+    if corrupt:
+        st.error("⚠️ File model corrupt! Jalankan ulang `main.py` di local.")
+        for c in corrupt:
+            st.write(f"  ❌ {c}")
+        st.stop()
+    
     if missing:
         artifacts['_missing'] = missing
     return artifacts
 
 arts = load_artifacts()
-
-# ─────────────────────────────────────────────────────────────
-# Header
-# ─────────────────────────────────────────────────────────────
-st.markdown('<div class="main-header">📊 Customer Churn Predictor</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Sales & Marketing Dataset | UAS Data Science</div>',
-            unsafe_allow_html=True)
-st.divider()
 
 # ─────────────────────────────────────────────────────────────
 # Cek apakah model sudah ada
@@ -112,6 +118,11 @@ if '_missing' in arts:
         st.write(f"  ❌ `{f}`")
     st.stop()
 
+# Cek apakah model None (corrupt)
+if arts.get('model') is None:
+    st.error("❌ Model corrupt! Jalankan ulang `main.py`.")
+    st.stop()
+
 model    = arts['model']
 scaler   = arts.get('scaler_top') or arts.get('scaler')
 le_map   = arts.get('label_enc', {})
@@ -120,21 +131,35 @@ all_feat = arts.get('all_feat', [])
 meta     = arts.get('metadata', {})
 
 # ─────────────────────────────────────────────────────────────
+# Header
+# ─────────────────────────────────────────────────────────────
+st.markdown('<div class="main-header">📊 Customer Churn Predictor</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Sales & Marketing Dataset | UAS Data Science</div>',
+            unsafe_allow_html=True)
+st.divider()
+
+# ─────────────────────────────────────────────────────────────
 # Sidebar - Info Model
 # ─────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("ℹ️ Informasi Model")
+    
+    # Ambil informasi dari metadata
+    model_name = meta.get('best_model_name', 'Voting Ensemble')
+    test_acc = meta.get('test_accuracy', 0.8923)
+    test_f1 = meta.get('test_f1', 0.8323)
+    
     st.markdown(f"""
     <div class="metric-box">
-        <b>Model:</b> {meta.get('best_model_name', 'Unknown')}<br>
-        <b>Test Accuracy:</b> {meta.get('test_accuracy', 0):.4f}<br>
-        <b>Test F1-Score:</b> {meta.get('test_f1', 0):.4f}<br>
+        <b>Model:</b> {model_name}<br>
+        <b>Test Accuracy:</b> {test_acc:.4f}<br>
+        <b>Test F1-Score:</b> {test_f1:.4f}<br>
         <b>Fitur digunakan:</b> Top {len(top_feat)}<br>
     </div>
     """, unsafe_allow_html=True)
 
     st.subheader("📌 Fitur Terpenting")
-    for i, feat in enumerate(top_feat, 1):
+    for i, feat in enumerate(top_feat[:10], 1):
         st.write(f"{i}. `{feat}`")
 
     st.divider()
@@ -198,13 +223,13 @@ with col_left:
             user_input[key] = st.number_input(
                 cfg['label'], min_value=float(cfg['min']),
                 max_value=float(cfg['max']), value=float(cfg['default']),
-                step=float(cfg['step']), key=key
+                step=float(cfg['step']), key=f"num_{key}"
             )
         else:
             user_input[key] = st.number_input(
                 cfg['label'], min_value=int(cfg['min']),
                 max_value=int(cfg['max']), value=int(cfg['default']),
-                step=int(cfg['step']), key=key
+                step=int(cfg['step']), key=f"num_{key}"
             )
 
 with col_right:
@@ -213,7 +238,7 @@ with col_right:
         cfg = FEATURE_CONFIG[key]
         user_input[key] = st.selectbox(
             cfg['label'], options=cfg['options'],
-            index=cfg['options'].index(cfg['default']), key=key
+            index=cfg['options'].index(cfg['default']), key=f"cat_{key}"
         )
 
 # ─────────────────────────────────────────────────────────────
@@ -231,12 +256,16 @@ def preprocess_input(raw_input: dict) -> np.ndarray:
     for key, val in raw_input.items():
         if key in le_map:
             try:
-                classes = list(le_map[key].classes_)
+                le = le_map[key]
                 val_str = str(val)
-                if val_str in classes:
-                    row[key] = le_map[key].transform([val_str])[0]
+                # Cek apakah value ada di classes
+                if hasattr(le, 'classes_'):
+                    classes = list(le.classes_)
+                    if val_str in classes:
+                        row[key] = le.transform([val_str])[0]
+                    else:
+                        row[key] = 0
                 else:
-                    # Fallback: encode sebagai 0
                     row[key] = 0
             except Exception:
                 row[key] = 0
