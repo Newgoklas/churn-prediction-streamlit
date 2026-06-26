@@ -495,7 +495,7 @@ with tab1:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ─────────────────────────────────────────────────────────────
-    # PREPROCESS INPUT - FIXED (PERBAIKAN UTAMA)
+    # PREPROCESS INPUT - FIXED
     # ─────────────────────────────────────────────────────────────
     def preprocess_input(raw: dict) -> np.ndarray:
         """
@@ -701,4 +701,4 @@ with tab3:
             labels = ['TIDAK CHURN', 'CHURN']
             values = [len(log_df) - churn, churn]
             fig = px.pie(values=values, names=labels, title="Distribusi", color=labels,
-                         color_discrete_map={'CH
+                         color
