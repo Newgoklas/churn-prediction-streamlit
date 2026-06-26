@@ -66,7 +66,7 @@ st.markdown("""
 # ─────────────────────────────────────────────────────────────
 # Load Model & Artefak (Menggunakan joblib)
 # ─────────────────────────────────────────────────────────────
-MODEL_DIR = Path("model")
+MODEL_DIR = Path("models")
 
 @st.cache_resource
 def load_artifacts():
