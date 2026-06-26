@@ -348,9 +348,7 @@ with tab1:
                 del st.session_state['sample']
             st.rerun()
 
-    # ─────────────────────────────────────────────────────────────
-    # PANDUAN DATA CHURN & TIDAK CHURN
-    # ─────────────────────────────────────────────────────────────
+    # ── PANDUAN ──
     with st.expander("📖 Panduan: Cara Mendapatkan Hasil CHURN / TIDAK CHURN"):
         st.markdown("""
         <div class="guide-churn">
@@ -684,4 +682,9 @@ with tab3:
             st.dataframe(log_df, use_container_width=True)
             st.download_button("📥 Download Riwayat", log_df.to_csv(index=False), f"history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "text/csv", use_container_width=True)
     else:
-        st.info("Belum ada data. Lakukan prediksi dulu
+        st.info("Belum ada data. Lakukan prediksi dulu di tab Prediksi Tunggal.")
+
+# =============================================================================
+# FOOTER
+# =============================================================================
+st.mark
