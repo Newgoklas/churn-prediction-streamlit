@@ -71,9 +71,10 @@ MODEL_DIR = Path("models")
 @st.cache_resource
 def load_artifacts():
     """Load semua file model menggunakan joblib (lebih kompatibel)"""
-    artifacts = {}s
+    artifacts = {}
     files_needed = {
         'model'      : MODEL_DIR / 'best_model.pkl',
+        'scaler_top' : MODEL_DIR / 'scaler_top.pkl',
         'scaler'     : MODEL_DIR / 'scaler.pkl',
         'label_enc'  : MODEL_DIR / 'label_encoders.pkl',
         'top_feat'   : MODEL_DIR / 'top_features.pkl',
