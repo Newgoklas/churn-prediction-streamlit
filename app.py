@@ -1,5 +1,5 @@
 # =============================================================================
-# app.py - Streamlit Deployment: Churn Prediction (7 FITUR SAJA)
+# app.py - Streamlit Deployment: Churn Prediction (7 FITUR)
 # =============================================================================
 
 import streamlit as st
@@ -19,12 +19,11 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────────────────────
-# MODERN CSS
+# MODERN CSS (disingkat agar lebih ringkas)
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    
     * { font-family: 'Inter', sans-serif; }
     .stApp { background: #f0f4f8; }
     
@@ -36,61 +35,28 @@ st.markdown("""
         margin-bottom: 1.5rem;
         box-shadow: 0 10px 40px rgba(0,0,0,0.15);
     }
-    
-    .main-header h1 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: #ffffff;
-        margin: 0;
-        letter-spacing: -0.5px;
-    }
-    
-    .main-header p {
-        font-size: 1rem;
-        color: rgba(255,255,255,0.7);
-        margin: 0.3rem 0 0 0;
-    }
-    
+    .main-header h1 { font-size: 2.5rem; font-weight: 800; color: #ffffff; margin: 0; }
+    .main-header p { font-size: 1rem; color: rgba(255,255,255,0.7); margin: 0.3rem 0 0 0; }
     .header-badge {
-        display: inline-block;
-        background: rgba(255,255,255,0.12);
-        padding: 0.2rem 1rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        color: rgba(255,255,255,0.8);
-        margin-top: 0.5rem;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255,255,255,0.06);
+        display: inline-block; background: rgba(255,255,255,0.12);
+        padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.7rem;
+        color: rgba(255,255,255,0.8); margin-top: 0.5rem;
+        backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.06);
     }
     
     .card-section {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 1.5rem;
+        background: #ffffff; border-radius: 16px; padding: 1.5rem;
         box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-        border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 1rem;
+        border: 1px solid rgba(0,0,0,0.04); margin-bottom: 1rem;
     }
-    
     .card-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #1a1a2e;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+        font-size: 0.85rem; font-weight: 600; color: #1a1a2e;
+        margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+        text-transform: uppercase; letter-spacing: 0.3px;
     }
-    
     .card-title .badge-count {
-        background: #e8f0fe;
-        color: #1a73e8;
-        font-size: 0.6rem;
-        padding: 0.1rem 0.6rem;
-        border-radius: 12px;
-        font-weight: 600;
+        background: #e8f0fe; color: #1a73e8; font-size: 0.6rem;
+        padding: 0.1rem 0.6rem; border-radius: 12px; font-weight: 600;
         margin-left: auto;
     }
     
@@ -100,30 +66,20 @@ st.markdown("""
         transition: all 0.2s ease !important;
         font-size: 0.95rem !important;
     }
-    
     .stNumberInput > div > div > input:focus {
         border-color: #1a73e8 !important;
         box-shadow: 0 0 0 3px rgba(26,115,232,0.1) !important;
     }
-    
-    .stNumberInput label {
-        font-weight: 500 !important;
-        font-size: 0.8rem !important;
-        color: #4a4a6a !important;
-    }
+    .stNumberInput label { font-weight: 500 !important; font-size: 0.8rem !important; color: #4a4a6a !important; }
     
     .stButton > button {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
-        color: white !important;
-        border-radius: 12px !important;
-        padding: 0.85rem 2rem !important;
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
-        border: none !important;
+        color: white !important; border-radius: 12px !important;
+        padding: 0.85rem 2rem !important; font-size: 1.1rem !important;
+        font-weight: 600 !important; border: none !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 15px rgba(26,26,46,0.25) !important;
     }
-    
     .stButton > button:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 8px 30px rgba(26,26,46,0.35) !important;
@@ -131,92 +87,44 @@ st.markdown("""
     
     .result-churn {
         background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-        color: white;
-        padding: 2rem;
-        border-radius: 16px;
-        text-align: center;
-        font-size: 1.8rem;
-        font-weight: 700;
+        color: white; padding: 2rem; border-radius: 16px;
+        text-align: center; font-size: 1.8rem; font-weight: 700;
         box-shadow: 0 8px 30px rgba(238,90,36,0.35);
     }
-    
-    .result-churn .sub {
-        font-size: 0.9rem;
-        font-weight: 400;
-        opacity: 0.85;
-        display: block;
-        margin-top: 0.3rem;
-    }
+    .result-churn .sub { font-size: 0.9rem; font-weight: 400; opacity: 0.85; display: block; margin-top: 0.3rem; }
     
     .result-ok {
         background: linear-gradient(135deg, #00b894, #00a86b);
-        color: white;
-        padding: 2rem;
-        border-radius: 16px;
-        text-align: center;
-        font-size: 1.8rem;
-        font-weight: 700;
+        color: white; padding: 2rem; border-radius: 16px;
+        text-align: center; font-size: 1.8rem; font-weight: 700;
         box-shadow: 0 8px 30px rgba(0,184,148,0.35);
     }
-    
-    .result-ok .sub {
-        font-size: 0.9rem;
-        font-weight: 400;
-        opacity: 0.85;
-        display: block;
-        margin-top: 0.3rem;
-    }
+    .result-ok .sub { font-size: 0.9rem; font-weight: 400; opacity: 0.85; display: block; margin-top: 0.3rem; }
     
     .metric-box {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 1.2rem;
-        border-left: 4px solid #1a1a2e;
-        border: 1px solid #eef2f6;
+        background: #f8fafc; border-radius: 12px; padding: 1.2rem;
+        border-left: 4px solid #1a1a2e; border: 1px solid #eef2f6;
     }
-    
-    .metric-box .label {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #8899aa;
-        font-weight: 600;
-    }
-    
-    .metric-box .value {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #1a1a2e;
-    }
+    .metric-box .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8899aa; font-weight: 600; }
+    .metric-box .value { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; }
     
     .info-box {
         background: linear-gradient(135deg, #e8f4fd, #d6eaf8);
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        border-left: 4px solid #1a73e8;
-        margin-bottom: 1.2rem;
-        font-size: 0.9rem;
-        color: #1a3a5a;
+        border-radius: 12px; padding: 1rem 1.2rem;
+        border-left: 4px solid #1a73e8; margin-bottom: 1.2rem;
+        font-size: 0.9rem; color: #1a3a5a;
         border: 1px solid rgba(26,115,232,0.1);
     }
     
     .stProgress > div > div {
         background: linear-gradient(90deg, #00b894, #00a86b) !important;
-        border-radius: 20px !important;
-        height: 10px !important;
+        border-radius: 20px !important; height: 10px !important;
     }
-    
-    .stProgress > div {
-        background: #eef2f6 !important;
-        border-radius: 20px !important;
-    }
+    .stProgress > div { background: #eef2f6 !important; border-radius: 20px !important; }
     
     .footer {
-        text-align: center;
-        font-size: 0.75rem;
-        color: #8899aa;
-        padding: 1.5rem 0 0.5rem 0;
-        border-top: 1px solid #eef2f6;
+        text-align: center; font-size: 0.75rem; color: #8899aa;
+        padding: 1.5rem 0 0.5rem 0; border-top: 1px solid #eef2f6;
         margin-top: 1rem;
     }
 </style>
@@ -233,6 +141,7 @@ def load_artifacts():
     files_needed = {
         'model': MODEL_DIR / 'best_model.pkl',
         'scaler': MODEL_DIR / 'scaler.pkl',
+        'scaler_top': MODEL_DIR / 'scaler_top.pkl',  # ← PAKAI INI
         'label_enc': MODEL_DIR / 'label_encoders.pkl',
         'top_feat': MODEL_DIR / 'top_features.pkl',
         'all_feat': MODEL_DIR / 'all_features.pkl',
@@ -266,7 +175,8 @@ if arts.get('model') is None:
     st.stop()
 
 model = arts['model']
-scaler = arts['scaler']
+# PRIORITASKAN scaler_top (khusus untuk top_features)
+scaler = arts.get('scaler_top') or arts.get('scaler')
 le_map = arts.get('label_enc', {})
 top_feat = arts.get('top_feat', [])
 all_feat = arts.get('all_feat', [])
@@ -302,15 +212,8 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     
     st.markdown("### 📌 7 Fitur Utama")
-    st.markdown("""
-    1. ⭐ Skor Kepuasan
-    2. 🎫 Tiket Support
-    3. ⏱️ Rata-rata Sesi
-    4. 🛍️ Frekuensi Pembelian
-    5. 💰 Total Pengeluaran
-    6. 👑 Premium User
-    7. 📦 Keterlambatan Kirim
-    """)
+    for i, feat in enumerate(top_feat[:7], 1):
+        st.markdown(f"{i}. `{feat}`")
     
     st.divider()
     st.markdown("""
@@ -369,9 +272,7 @@ user_input = {}
 
 col_left, col_right = st.columns(2)
 
-# Fitur di kiri (4 fitur)
 left_keys = ['satisfaction_score', 'support_tickets', 'avg_session_time', 'last_3_month_purchase_freq']
-# Fitur di kanan (3 fitur)
 right_keys = ['total_spent', 'is_premium_user', 'delivery_delay_days']
 
 with col_left:
@@ -441,39 +342,40 @@ with col_right:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# PREPROCESS & PREDICT
+# PREPROCESS & PREDICT (FIXED)
 # ─────────────────────────────────────────────────────────────
 def preprocess_input(raw_input: dict) -> np.ndarray:
+    """
+    Preprocess input user untuk prediksi.
+    Hanya menggunakan top_features yang sudah dipilih.
+    """
+    # Buat dictionary dengan semua nilai
     row = {}
     for key, val in raw_input.items():
-        if key in le_map:
-            try:
-                le = le_map[key]
-                val_str = str(val)
-                if hasattr(le, 'classes_'):
-                    classes = list(le.classes_)
-                    if val_str in classes:
-                        row[key] = le.transform([val_str])[0]
-                    else:
-                        row[key] = 0
-                else:
-                    row[key] = 0
-            except Exception:
-                row[key] = 0
-        else:
-            row[key] = val
+        row[key] = val
     
+    # Buat dataframe dengan urutan yang benar (sesuai top_feat)
     ordered = []
-    for feat in all_feat:
+    for feat in top_feat:
         if feat in row:
             ordered.append(row[feat])
         else:
+            # Jika fitur tidak ada, beri nilai 0
             ordered.append(0)
     
-    df_input = pd.DataFrame([ordered], columns=all_feat)
-    available_top = [f for f in top_feat if f in df_input.columns]
-    df_top = df_input[available_top]
-    arr_scaled = scaler.transform(df_top)
+    # Buat dataframe dengan nama kolom yang benar
+    df_input = pd.DataFrame([ordered], columns=top_feat)
+    
+    # Scale menggunakan scaler yang sudah dilatih
+    # Gunakan scaler (yang seharusnya scaler_top)
+    try:
+        arr_scaled = scaler.transform(df_input)
+    except Exception as e:
+        st.error(f"Error saat scaling: {e}")
+        st.write("Fitur yang dibutuhkan:", top_feat)
+        st.write("Fitur yang diberikan:", list(row.keys()))
+        raise e
+    
     return arr_scaled
 
 # ─────────────────────────────────────────────────────────────
