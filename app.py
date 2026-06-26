@@ -893,4 +893,4 @@ with tab3:
                 color_discrete_sequence=['#667eea']
             )
             fig.update_layout(
-                xaxis_title="Probabilitas Churn (%)
+                xaxis_title
