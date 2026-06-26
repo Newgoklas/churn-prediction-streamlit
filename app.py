@@ -1,5 +1,5 @@
 # =============================================================================
-# app.py - Streamlit Deployment: Churn Prediction (Numerik Sudah Diperbaiki)
+# app.py - Streamlit Deployment: Churn Prediction (Numerik Detail)
 # =============================================================================
 
 import streamlit as st
@@ -31,7 +31,6 @@ def load_artifacts():
         artifacts['all_features'] = joblib.load(model_dir / "all_features.pkl")
         artifacts['metadata'] = joblib.load(model_dir / "model_metadata.pkl")
     except:
-        # Fallback ke root
         artifacts['model'] = joblib.load("best_model.pkl")
         artifacts['scaler'] = joblib.load("scaler.pkl")
         artifacts['scaler_top'] = joblib.load("scaler_top.pkl")
@@ -51,7 +50,7 @@ all_feat = arts.get('all_features', [])
 meta = arts.get('metadata', {})
 
 # ─────────────────────────────────────────────────────────────
-# Custom CSS (Sama seperti sebelumnya)
+# Custom CSS
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -63,6 +62,7 @@ st.markdown("""
     .stButton > button { width: 100%; background: #1f3a5f; color: white; border-radius: 8px; padding: 0.7rem; font-size: 1.1rem; font-weight: 600; border: none; transition: 0.3s; }
     .stButton > button:hover { background: #2c5f8a; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     .info-box { background: #e8f4fd; border-radius: 8px; padding: 0.8rem 1rem; border-left: 4px solid #3498db; margin-bottom: 1rem; }
+    .section-title { font-size: 1.1rem; font-weight: 600; color: #1f3a5f; margin-top: 0.5rem; margin-bottom: 0.5rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -96,76 +96,134 @@ with st.sidebar:
         for i, feat in enumerate(top_feat[:10], 1):
             st.write(f"{i}. `{feat}`")
 
+    st.divider()
+    st.markdown("**Cara Penggunaan:**")
+    st.markdown("""
+    1. Isi semua field di form utama
+    2. Klik tombol **Prediksi**
+    3. Lihat hasil prediksi & probabilitas
+    """)
+
 # ─────────────────────────────────────────────────────────────
 # Form Input
 # ─────────────────────────────────────────────────────────────
 st.subheader("🔢 Input Data Customer")
 st.markdown('<div class="info-box">Isi data customer di bawah ini untuk memprediksi kemungkinan churn.</div>', unsafe_allow_html=True)
 
-# ── DEFINISI FITUR (DIPERBAIKI) ─────────────────────────────
+# ── DEFINISI FITUR (DETAIL) ─────────────────────────────────
 FEATURE_CONFIG = {
-    # ── NUMERIK ──────────────────────────────────────────────
-    'age': {'type': 'number', 'min': 18, 'max': 80, 'default': 35, 'label': 'Usia', 'step': 1},
-    'total_visits': {'type': 'number', 'min': 0, 'max': 500, 'default': 50, 'label': 'Total Kunjungan', 'step': 1},
-    'avg_session_time': {'type': 'float', 'min': 0.0, 'max': 60.0, 'default': 5.0, 'label': 'Rata-rata Session (menit)', 'step': 0.1},
-    'pages_per_session': {'type': 'number', 'min': 1, 'max': 50, 'default': 5, 'label': 'Halaman per Session', 'step': 1},
-    'email_open_rate': {'type': 'float', 'min': 0.0, 'max': 1.0, 'default': 0.3, 'label': 'Email Open Rate (0–1)', 'step': 0.01},
-    'email_click_rate': {'type': 'float', 'min': 0.0, 'max': 1.0, 'default': 0.1, 'label': 'Email Click Rate (0–1)', 'step': 0.01},
-    'total_spent': {'type': 'float', 'min': 0.0, 'max': 10000.0, 'default': 500.0, 'label': 'Total Pengeluaran ($)', 'step': 1.0},
-    'avg_order_value': {'type': 'float', 'min': 0.0, 'max': 2000.0, 'default': 100.0, 'label': 'Rata-rata Nilai Order ($)', 'step': 1.0},
-    'discount_used': {'type': 'number', 'min': 0, 'max': 50, 'default': 3, 'label': 'Jumlah Diskon Dipakai', 'step': 1},
-    'support_tickets': {'type': 'number', 'min': 0, 'max': 20, 'default': 1, 'label': 'Tiket Support', 'step': 1},
-    'refund_requested': {'type': 'number', 'min': 0, 'max': 10, 'default': 0, 'label': 'Refund Diminta', 'step': 1},
-    'delivery_delay_days': {'type': 'number', 'min': 0, 'max': 30, 'default': 6, 'label': 'Keterlambatan Pengiriman (hari)', 'step': 1},  # ← DIPERBAIKI: default 2 → 6
-    'satisfaction_score': {'type': 'number', 'min': 1, 'max': 10, 'default': 7, 'label': 'Skor Kepuasan (1–10)', 'step': 1},
-    'nps_score': {'type': 'number', 'min': -100, 'max': 100, 'default': 30, 'label': 'NPS Score (-100 – 100)', 'step': 1},
-    'marketing_spend_per_user': {'type': 'float', 'min': 0.0, 'max': 500.0, 'default': 30.0, 'label': 'Marketing Spend per User ($)', 'step': 0.5},
-    'lifetime_value': {'type': 'float', 'min': 0.0, 'max': 20000.0, 'default': 1500.0, 'label': 'Lifetime Value ($)', 'step': 10.0},
-    'last_3_month_purchase_freq': {'type': 'number', 'min': 0, 'max': 30, 'default': 3, 'label': 'Frekuensi Pembelian 3 Bulan Terakhir', 'step': 1},
-    'is_premium_user': {'type': 'number', 'min': 0, 'max': 1, 'default': 1, 'label': 'Premium User (0=Tidak, 1=Ya)', 'step': 1},  # ← DIPERBAIKI: default 0 → 1
+    # ── DATA DEMOGRAFIS ──────────────────────────────────────
+    'age': {'type': 'number', 'min': 18, 'max': 80, 'default': 35, 'label': '🧑 Usia (tahun)', 'step': 1, 'section': 'demografi'},
+    'gender': {'type': 'select', 'options': ['Male', 'Female', 'Other'], 'default': 'Female', 'label': '👤 Gender', 'section': 'demografi'},
+    'country': {'type': 'select', 'options': ['USA', 'UK', 'Germany', 'France', 'India', 'Australia', 'Canada', 'Brazil'], 'default': 'Brazil', 'label': '🌍 Negara', 'section': 'demografi'},
+    'city': {'type': 'select', 'options': ['New York', 'London', 'Berlin', 'Paris', 'Mumbai', 'Sydney', 'Toronto', 'São Paulo'], 'default': 'Mumbai', 'label': '🏙️ Kota', 'section': 'demografi'},
     
-    # ── KATEGORIKAL ──────────────────────────────────────────
-    'gender': {'type': 'select', 'options': ['Male', 'Female', 'Other'], 'default': 'Female', 'label': 'Gender'},
-    'country': {'type': 'select', 'options': ['USA', 'UK', 'Germany', 'France', 'India', 'Australia', 'Canada', 'Brazil'], 'default': 'Brazil', 'label': 'Negara'},
-    'city': {'type': 'select', 'options': ['New York', 'London', 'Berlin', 'Paris', 'Mumbai', 'Sydney', 'Toronto', 'São Paulo'], 'default': 'Mumbai', 'label': 'Kota'},
-    'acquisition_channel': {'type': 'select', 'options': ['Organic', 'Paid', 'Referral', 'Social', 'Email'], 'default': 'Referral', 'label': 'Channel Akuisisi'},
-    'device_type': {'type': 'select', 'options': ['Mobile', 'Desktop', 'Tablet'], 'default': 'Mobile', 'label': 'Tipe Perangkat'},
-    'subscription_type': {'type': 'select', 'options': ['Basic', 'Standard', 'Premium'], 'default': 'Standard', 'label': 'Tipe Langganan'},
-    'payment_method': {'type': 'select', 'options': ['Credit Card', 'Debit Card', 'PayPal', 'Bank Transfer', 'Crypto'], 'default': 'Credit Card', 'label': 'Metode Pembayaran'},
+    # ── AKTIVITAS PENGGUNAAN ────────────────────────────────
+    'total_visits': {'type': 'number', 'min': 0, 'max': 500, 'default': 50, 'label': '👀 Total Kunjungan', 'step': 1, 'section': 'aktivitas'},
+    'avg_session_time': {'type': 'float', 'min': 0.0, 'max': 60.0, 'default': 5.0, 'label': '⏱️ Rata-rata Sesi (menit)', 'step': 0.1, 'section': 'aktivitas'},
+    'pages_per_session': {'type': 'number', 'min': 1, 'max': 50, 'default': 5, 'label': '📄 Halaman per Sesi', 'step': 1, 'section': 'aktivitas'},
+    'device_type': {'type': 'select', 'options': ['Mobile', 'Desktop', 'Tablet'], 'default': 'Mobile', 'label': '📱 Tipe Perangkat', 'section': 'aktivitas'},
+    'acquisition_channel': {'type': 'select', 'options': ['Organic', 'Paid', 'Referral', 'Social', 'Email'], 'default': 'Referral', 'label': '📢 Channel Akuisisi', 'section': 'aktivitas'},
+    
+    # ── EMAIL & PEMBELIAN ────────────────────────────────────
+    'email_open_rate': {'type': 'float', 'min': 0.0, 'max': 1.0, 'default': 0.30, 'label': '📧 Email Open Rate', 'step': 0.01, 'section': 'email'},
+    'email_click_rate': {'type': 'float', 'min': 0.0, 'max': 1.0, 'default': 0.10, 'label': '🖱️ Email Click Rate', 'step': 0.01, 'section': 'email'},
+    'total_spent': {'type': 'float', 'min': 0.0, 'max': 10000.0, 'default': 500.0, 'label': '💰 Total Pengeluaran ($)', 'step': 1.0, 'section': 'pembelian'},
+    'avg_order_value': {'type': 'float', 'min': 0.0, 'max': 2000.0, 'default': 100.0, 'label': '🛒 Rata-rata Nilai Order ($)', 'step': 1.0, 'section': 'pembelian'},
+    'discount_used': {'type': 'number', 'min': 0, 'max': 50, 'default': 3, 'label': '🏷️ Jumlah Diskon Dipakai', 'step': 1, 'section': 'pembelian'},
+    'last_3_month_purchase_freq': {'type': 'number', 'min': 0, 'max': 30, 'default': 3, 'label': '🛍️ Frekuensi Pembelian 3 Bulan', 'step': 1, 'section': 'pembelian'},
+    
+    # ── DUKUNGAN & KEPUASAN ──────────────────────────────────
+    'support_tickets': {'type': 'number', 'min': 0, 'max': 20, 'default': 1, 'label': '🎫 Tiket Support', 'step': 1, 'section': 'dukungan'},
+    'refund_requested': {'type': 'number', 'min': 0, 'max': 10, 'default': 0, 'label': '↩️ Refund Diminta', 'step': 1, 'section': 'dukungan'},
+    'delivery_delay_days': {'type': 'number', 'min': 0, 'max': 30, 'default': 6, 'label': '📦 Keterlambatan Pengiriman (hari)', 'step': 1, 'section': 'dukungan'},
+    'satisfaction_score': {'type': 'number', 'min': 1, 'max': 10, 'default': 7, 'label': '⭐ Skor Kepuasan (1-10)', 'step': 1, 'section': 'dukungan'},
+    'nps_score': {'type': 'number', 'min': -100, 'max': 100, 'default': 30, 'label': '📊 NPS Score (-100 - 100)', 'step': 1, 'section': 'dukungan'},
+    
+    # ── KEUANGAN & LANGANAN ──────────────────────────────────
+    'marketing_spend_per_user': {'type': 'float', 'min': 0.0, 'max': 500.0, 'default': 30.0, 'label': '📢 Marketing Spend per User ($)', 'step': 0.5, 'section': 'keuangan'},
+    'lifetime_value': {'type': 'float', 'min': 0.0, 'max': 20000.0, 'default': 1500.0, 'label': '💎 Lifetime Value ($)', 'step': 10.0, 'section': 'keuangan'},
+    'is_premium_user': {'type': 'number', 'min': 0, 'max': 1, 'default': 1, 'label': '👑 Premium User (0=Tidak, 1=Ya)', 'step': 1, 'section': 'keuangan'},
+    'subscription_type': {'type': 'select', 'options': ['Basic', 'Standard', 'Premium'], 'default': 'Standard', 'label': '📋 Tipe Langganan', 'section': 'keuangan'},
+    'payment_method': {'type': 'select', 'options': ['Credit Card', 'Debit Card', 'PayPal', 'Bank Transfer', 'Crypto'], 'default': 'Credit Card', 'label': '💳 Metode Pembayaran', 'section': 'keuangan'},
 }
 
-# ── Render Form ───────────────────────────────────────────────
+# ── Render Form dengan Section ──────────────────────────────
 user_input = {}
 
+# Kategorikan berdasarkan section
+sections = {}
+for key, cfg in FEATURE_CONFIG.items():
+    section = cfg.get('section', 'lainnya')
+    if section not in sections:
+        sections[section] = []
+    sections[section].append(key)
+
+# Tampilkan dalam 2 kolom
 col_left, col_right = st.columns(2)
-num_keys = [k for k, v in FEATURE_CONFIG.items() if v['type'] in ('number', 'float')]
-cat_keys = [k for k, v in FEATURE_CONFIG.items() if v['type'] == 'select']
+
+section_colors = {
+    'demografi': '🧑‍💼 Data Demografis',
+    'aktivitas': '📱 Aktivitas Penggunaan',
+    'email': '📧 Email & Komunikasi',
+    'pembelian': '🛒 Pembelian & Diskon',
+    'dukungan': '🎯 Dukungan & Kepuasan',
+    'keuangan': '💰 Keuangan & Langganan'
+}
+
+# Tentukan pembagian section ke kiri dan kanan
+left_sections = ['demografi', 'aktivitas', 'email']
+right_sections = ['pembelian', 'dukungan', 'keuangan']
 
 with col_left:
-    st.markdown("**📈 Data Numerik**")
-    for key in num_keys:
-        cfg = FEATURE_CONFIG[key]
-        if cfg['type'] == 'float':
-            user_input[key] = st.number_input(
-                cfg['label'], min_value=float(cfg['min']),
-                max_value=float(cfg['max']), value=float(cfg['default']),
-                step=float(cfg['step']), key=f"num_{key}"
-            )
-        else:
-            user_input[key] = st.number_input(
-                cfg['label'], min_value=int(cfg['min']),
-                max_value=int(cfg['max']), value=int(cfg['default']),
-                step=int(cfg['step']), key=f"num_{key}"
-            )
+    for section in left_sections:
+        if section in sections:
+            st.markdown(f"<div class='section-title'>{section_colors.get(section, section)}</div>", unsafe_allow_html=True)
+            for key in sections[section]:
+                cfg = FEATURE_CONFIG[key]
+                if cfg['type'] == 'select':
+                    user_input[key] = st.selectbox(
+                        cfg['label'], options=cfg['options'],
+                        index=cfg['options'].index(cfg['default']), key=f"cat_{key}"
+                    )
+                elif cfg['type'] == 'float':
+                    user_input[key] = st.number_input(
+                        cfg['label'], min_value=float(cfg['min']),
+                        max_value=float(cfg['max']), value=float(cfg['default']),
+                        step=float(cfg['step']), key=f"num_{key}"
+                    )
+                else:
+                    user_input[key] = st.number_input(
+                        cfg['label'], min_value=int(cfg['min']),
+                        max_value=int(cfg['max']), value=int(cfg['default']),
+                        step=int(cfg['step']), key=f"num_{key}"
+                    )
+            st.markdown("---")
 
 with col_right:
-    st.markdown("**🏷️ Data Kategorikal**")
-    for key in cat_keys:
-        cfg = FEATURE_CONFIG[key]
-        user_input[key] = st.selectbox(
-            cfg['label'], options=cfg['options'],
-            index=cfg['options'].index(cfg['default']), key=f"cat_{key}"
-        )
+    for section in right_sections:
+        if section in sections:
+            st.markdown(f"<div class='section-title'>{section_colors.get(section, section)}</div>", unsafe_allow_html=True)
+            for key in sections[section]:
+                cfg = FEATURE_CONFIG[key]
+                if cfg['type'] == 'select':
+                    user_input[key] = st.selectbox(
+                        cfg['label'], options=cfg['options'],
+                        index=cfg['options'].index(cfg['default']), key=f"cat_{key}"
+                    )
+                elif cfg['type'] == 'float':
+                    user_input[key] = st.number_input(
+                        cfg['label'], min_value=float(cfg['min']),
+                        max_value=float(cfg['max']), value=float(cfg['default']),
+                        step=float(cfg['step']), key=f"num_{key}"
+                    )
+                else:
+                    user_input[key] = st.number_input(
+                        cfg['label'], min_value=int(cfg['min']),
+                        max_value=int(cfg['max']), value=int(cfg['default']),
+                        step=int(cfg['step']), key=f"num_{key}"
+                    )
+            st.markdown("---")
 
 # ─────────────────────────────────────────────────────────────
 # Fungsi Prediksi
@@ -267,6 +325,8 @@ if predict_btn:
                     recs.append("🎁 **Tawarkan diskon personal** — pelanggan belum pernah menggunakan diskon.")
                 if user_input.get('delivery_delay_days', 0) > 5:
                     recs.append("🚚 **Perbaiki pengiriman** — keterlambatan pengiriman tinggi.")
+                if user_input.get('avg_session_time', 0) < 3:
+                    recs.append("⏱️ **Tingkatkan engagement** — sesi terlalu singkat.")
                 if not recs:
                     recs.append("🔄 **Jalankan program retensi** — kirim email personal dan tawarkan benefit eksklusif.")
                 for r in recs:
@@ -275,6 +335,9 @@ if predict_btn:
                 st.success("✅ Pelanggan dalam kondisi sehat. Pertahankan kualitas layanan dan lanjutkan program loyalitas.")
                 if user_input.get('is_premium_user', 0) == 0:
                     st.info("💎 Pertimbangkan untuk menawarkan **upgrade ke Premium** kepada pelanggan ini.")
+                if user_input.get('satisfaction_score', 0) >= 9:
+                    st.balloons()
+                    st.info("⭐ Pelanggan sangat puas! Pertahankan kualitas ini.")
 
             with st.expander("📄 Detail Data Input yang Diproses"):
                 df_display = pd.DataFrame([user_input]).T.reset_index()
