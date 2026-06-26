@@ -494,8 +494,43 @@ with tab1:
                 user_input[k] = st.number_input(f['label'], min_value=int(f['min']), max_value=int(f['max']), value=int(f['default']), step=int(f['step']), key=f"b_{k}")
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # ─────────────────────────────────────────────────────────────
+    # PREPROCESS INPUT - FIXED (PERBAIKAN UTAMA)
+    # ─────────────────────────────────────────────────────────────
     def preprocess_input(raw: dict) -> np.ndarray:
-        ordered = [raw.get(f, 0) for f in top_feat]
+        """
+        Preprocess input user.
+        Untuk fitur yang tidak diisi, gunakan nilai default CHURN.
+        """
+        # Default values untuk CHURN (ekstrim)
+        default_churn = {
+            'age': 18,
+            'total_visits': 1,
+            'nps_score': -100,
+            'pages_per_session': 1,
+            'email_open_rate': 0.0,
+            'email_click_rate': 0.0,
+            'refund_requested': 5,
+            'avg_order_value': 5,
+            'discount_used': 0,
+            'marketing_spend_per_user': 0,
+            'lifetime_value': 10,
+            'country': 0,
+            'city': 0,
+            'acquisition_channel': 0,
+            'device_type': 0,
+            'subscription_type': 0,
+            'payment_method': 0,
+            'gender': 0
+        }
+        
+        ordered = []
+        for f in top_feat:
+            if f in raw:
+                ordered.append(raw[f])
+            else:
+                ordered.append(default_churn.get(f, 0))
+        
         df = pd.DataFrame([ordered], columns=top_feat)
         return scaler.transform(df)
 
@@ -666,23 +701,4 @@ with tab3:
             labels = ['TIDAK CHURN', 'CHURN']
             values = [len(log_df) - churn, churn]
             fig = px.pie(values=values, names=labels, title="Distribusi", color=labels,
-                         color_discrete_map={'CHURN': '#ff6b6b', 'TIDAK CHURN': '#00b894'})
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col_chart2:
-            fig = px.histogram(log_df, x='prob_churn', nbins=20, title="Probabilitas Churn",
-                               color_discrete_sequence=['#667eea'])
-            fig.update_layout(
-                xaxis_title="Probabilitas Churn (%)",
-                yaxis_title="Jumlah Prediksi"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with st.expander("📋 Riwayat Lengkap"):
-            st.dataframe(log_df, use_container_width=True)
-            st.download_button("📥 Download Riwayat", log_df.to_csv(index=False), f"history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "text/csv", use_container_width=True)
-    else:
-        st.info("Belum ada data. Lakukan prediksi dulu di tab Prediksi Tunggal.")
-
-# =============================================================================
-# FOOTER
+                         color_discrete_map={'CH
