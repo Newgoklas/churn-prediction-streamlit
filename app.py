@@ -667,10 +667,19 @@ with tab2:
                         st.plotly_chart(fig, use_container_width=True)
                     with col_chart2:
                         fig = px.histogram(batch_df, x='prob_churn', nbins=20, title="Probabilitas Churn")
-                        fig.update_layout(xaxis_title="Probabilitas (%)", yaxis_title="Jumlah")
+                        fig.update_layout(
+                            xaxis_title="Probabilitas (%)",
+                            yaxis_title="Jumlah"
+                        )
                         st.plotly_chart(fig, use_container_width=True)
                     
-                    st.download_button("📥 Download Hasil", batch_df.to_csv(index=False), f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "text/csv", use_container_width=True)
+                    st.download_button(
+                        "📥 Download Hasil",
+                        batch_df.to_csv(index=False),
+                        f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        "text/csv",
+                        use_container_width=True
+                    )
                     
         except Exception as e:
             st.error(f"❌ Error: {e}")
@@ -700,7 +709,4 @@ with tab3:
         with col_chart1:
             labels = ['TIDAK CHURN', 'CHURN']
             values = [len(log_df) - churn, churn]
-            fig = px.pie(
-                values=values,
-                names=labels,
-                title="Distrib
+            fig = px.pie
