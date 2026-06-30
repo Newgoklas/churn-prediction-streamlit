@@ -1,632 +1,654 @@
-# =============================================================================
-# app.py - Churn Prediction ULTIMATE (10 FITUR - FULL VERSION)
-# =============================================================================
+# app.py — Customer Churn Predictor (Modern UI)
+# Run: streamlit run app.py
 
 import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import random
 import plotly.express as px
+import plotly.graph_objects as go
+from pathlib import Path
 from datetime import datetime
+import random
 
 # ─────────────────────────────────────────────────────────────
-# Konfigurasi Halaman
+# Page Config
 # ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Churn Predictor Pro",
-    page_icon="🚀",
+    page_title="Churn Predictor",
+    page_icon="📡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ─────────────────────────────────────────────────────────────
-# CSS MODERN
+# Design System — Dark "ops console" theme
+# Palette: Navy/Slate base, Indigo accent, Coral danger, Emerald safe
+# Signature: live gauge chart sebagai focal point hasil prediksi
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    * { font-family: 'Inter', sans-serif; }
-    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); }
-    
-    .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem 2rem 1.5rem 2rem;
-        border-radius: 20px;
-        text-align: center;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 10px 40px rgba(102,126,234,0.3);
-    }
-    .main-header h1 { font-size: 2.5rem; font-weight: 800; color: #ffffff; margin: 0; }
-    .main-header p { font-size: 1rem; color: rgba(255,255,255,0.8); margin: 0.3rem 0 0 0; }
-    .header-badge {
-        display: inline-block;
-        background: rgba(255,255,255,0.15);
-        padding: 0.3rem 1.2rem;
-        border-radius: 30px;
-        font-size: 0.75rem;
-        color: #ffffff;
-        margin-top: 0.5rem;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    .header-badge span { font-weight: 700; color: #ffd700; }
-    
-    .card-section {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-        border: 1px solid #eef2f6;
-        margin-bottom: 1rem;
-    }
-    .card-title {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #1a1a2e;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        text-transform: uppercase;
-    }
-    .card-title .badge {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        font-size: 0.55rem;
-        padding: 0.1rem 0.7rem;
-        border-radius: 20px;
-        margin-left: auto;
-    }
-    
-    .stNumberInput > div > div > input {
-        border-radius: 10px !important;
-        border: 1.5px solid #e8edf4 !important;
-        background: #fafbfc !important;
-        font-size: 0.9rem !important;
-        padding: 0.5rem 1rem !important;
-        color: #1a1a2e !important;
-    }
-    .stNumberInput > div > div > input:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 4px rgba(102,126,234,0.1) !important;
-    }
-    .stNumberInput label { font-weight: 600 !important; font-size: 0.78rem !important; color: #4a4a6a !important; }
-    
-    .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border-radius: 14px !important;
-        padding: 0.85rem 2rem !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        border: none !important;
-        box-shadow: 0 8px 30px rgba(102,126,234,0.3) !important;
-        width: 100% !important;
-    }
-    .stButton > button:hover { transform: translateY(-2px) !important; box-shadow: 0 12px 40px rgba(102,126,234,0.4) !important; }
-    
-    .result-churn {
-        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-        color: white;
-        padding: 2rem;
-        border-radius: 16px;
-        text-align: center;
-        font-size: 2rem;
-        font-weight: 800;
-        box-shadow: 0 8px 30px rgba(238,90,36,0.3);
-    }
-    .result-churn .sub { font-size: 0.9rem; font-weight: 400; opacity: 0.85; display: block; margin-top: 0.3rem; }
-    
-    .result-ok {
-        background: linear-gradient(135deg, #00b894, #00a86b);
-        color: white;
-        padding: 2rem;
-        border-radius: 16px;
-        text-align: center;
-        font-size: 2rem;
-        font-weight: 800;
-        box-shadow: 0 8px 30px rgba(0,184,148,0.3);
-    }
-    .result-ok .sub { font-size: 0.9rem; font-weight: 400; opacity: 0.85; display: block; margin-top: 0.3rem; }
-    
-    .metric-box {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 1rem;
-        border: 1px solid #eef2f6;
-        text-align: center;
-    }
-    .metric-box .label { font-size: 0.65rem; text-transform: uppercase; color: #8899aa; font-weight: 600; }
-    .metric-box .value { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; margin-top: 0.1rem; }
-    .metric-box .value.blue { color: #667eea; }
-    .metric-box .value.pink { color: #e83e8c; }
-    .metric-box .value.green { color: #00b894; }
-    
-    .info-box {
-        background: linear-gradient(135deg, #e8f4fd, #d6eaf8);
-        border-radius: 12px;
-        padding: 0.8rem 1.2rem;
-        border-left: 4px solid #667eea;
-        margin-bottom: 1.2rem;
-        font-size: 0.9rem;
-        color: #1a3a5a;
-    }
-    .info-box strong { color: #667eea; }
-    
-    .stProgress > div > div {
-        background: linear-gradient(90deg, #667eea, #764ba2) !important;
-        border-radius: 20px !important;
-        height: 10px !important;
-    }
-    .stProgress > div { background: #eef2f6 !important; border-radius: 20px !important; }
-    
-    .footer {
-        text-align: center;
-        font-size: 0.7rem;
-        color: #8899aa;
-        padding: 1.5rem 0 0.5rem 0;
-        border-top: 1px solid #eef2f6;
-        margin-top: 1.5rem;
-    }
-    
-    .guide-churn {
-        background: #fff5f5;
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid #ff6b6b;
-        margin-bottom: 0.5rem;
-    }
-    .guide-nochurn {
-        background: #f0fff4;
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid #00b894;
-        margin-bottom: 0.5rem;
-    }
-    .guide-tips {
-        background: #e8f4fd;
-        padding: 0.8rem 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #667eea;
-    }
-    .guide-table {
-        width: 100%;
-        font-size: 0.85rem;
-        border-collapse: collapse;
-        margin-top: 0.5rem;
-    }
-    .guide-table th {
-        padding: 8px;
-        text-align: left;
-        color: white;
-    }
-    .guide-table th.churn-header { background: #ff6b6b; }
-    .guide-table th.nochurn-header { background: #00b894; }
-    .guide-table td {
-        padding: 8px;
-        border-bottom: 1px solid #ddd;
-    }
-    .guide-table tr:last-child td { border-bottom: none; }
-    .guide-value { font-weight: 700; }
-    .guide-value.churn-value { color: #ff6b6b; }
-    .guide-value.nochurn-value { color: #00b894; }
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
+.stApp { background: #0f1117 !important; }
+#MainMenu, footer, header { visibility: hidden; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1a1d27; }
+::-webkit-scrollbar-thumb { background: #3d4263; border-radius: 10px; }
+
+/* HERO */
+.hero {
+    background: linear-gradient(135deg, #1a1d2e 0%, #16213e 40%, #0f3460 100%);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 20px;
+    padding: 2.2rem 2.5rem 1.8rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.hero::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+}
+.hero-eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem; font-weight: 500;
+    letter-spacing: 0.2em; color: #6366f1; text-transform: uppercase;
+    margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.hero-eyebrow::before { content: '●'; color: #22d3ee; font-size: 0.5rem; }
+.hero h1 { font-size: 2rem; font-weight: 700; color: #f8fafc; margin: 0 0 0.4rem; line-height: 1.2; }
+.hero h1 span { color: #818cf8; }
+.hero-sub { font-size: 0.9rem; color: #94a3b8; margin: 0; max-width: 520px; }
+.hero-pills { display: flex; gap: 0.5rem; margin-top: 1.2rem; flex-wrap: wrap; }
+.pill { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc;
+    font-size: 0.7rem; font-weight: 600; padding: 0.28rem 0.8rem; border-radius: 20px;
+    font-family: 'DM Mono', monospace; letter-spacing: 0.05em; }
+.pill.green { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); color: #86efac; }
+.pill.cyan { background: rgba(34,211,238,0.1); border-color: rgba(34,211,238,0.3); color: #67e8f9; }
+
+/* CARDS */
+.glass-card { background: #1a1d2e; border: 1px solid #2d3152; border-radius: 16px;
+    padding: 1.4rem 1.5rem; margin-bottom: 0.9rem; position: relative; }
+.glass-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent); border-radius: 16px 16px 0 0; }
+.card-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #475569; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.card-label .dot { width: 5px; height: 5px; border-radius: 50%; background: #6366f1; display: inline-block; }
+
+/* FORM INPUTS */
+.stNumberInput > div > div > input {
+    background: #0f1117 !important; border: 1.5px solid #2d3152 !important; border-radius: 10px !important;
+    color: #e2e8f0 !important; font-size: 0.92rem !important; padding: 0.55rem 0.9rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+.stNumberInput > div > div > input:focus {
+    border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important; outline: none !important;
+}
+.stNumberInput label { font-size: 0.78rem !important; font-weight: 600 !important; color: #94a3b8 !important; }
+.stSelectbox > div > div { background: #0f1117 !important; border: 1.5px solid #2d3152 !important;
+    border-radius: 10px !important; color: #e2e8f0 !important; }
+.stSelectbox label { font-size: 0.78rem !important; font-weight: 600 !important; color: #94a3b8 !important; }
+
+/* BUTTONS */
+.stButton > button {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; color: #fff !important; border: none !important;
+    border-radius: 12px !important; font-size: 0.95rem !important; font-weight: 700 !important;
+    padding: 0.75rem 1.5rem !important; letter-spacing: 0.02em !important; transition: all 0.2s ease !important;
+    box-shadow: 0 4px 20px rgba(79,70,229,0.35) !important; width: 100% !important;
+}
+.stButton > button:hover { transform: translateY(-1px) !important; box-shadow: 0 8px 28px rgba(79,70,229,0.5) !important; }
+.sample-btn > button { background: #1a1d2e !important; border: 1px solid #2d3152 !important; color: #94a3b8 !important;
+    font-size: 0.78rem !important; padding: 0.4rem 0.6rem !important; border-radius: 8px !important;
+    box-shadow: none !important; font-weight: 500 !important; }
+.sample-btn > button:hover { border-color: #6366f1 !important; color: #a5b4fc !important; transform: none !important; box-shadow: none !important; }
+
+/* RESULT CARDS */
+.result-churn { background: linear-gradient(135deg, #2d1419, #3d1a1a); border: 1px solid rgba(239,68,68,0.4);
+    border-radius: 20px; padding: 2rem; text-align: center; position: relative; overflow: hidden; }
+.result-churn::before { content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%); }
+.result-churn .icon { font-size: 2.5rem; margin-bottom: 0.4rem; }
+.result-churn .title { font-size: 1.6rem; font-weight: 800; color: #fca5a5; }
+.result-churn .desc { font-size: 0.82rem; color: #f87171; opacity: 0.8; margin-top: 0.2rem; }
+.result-ok { background: linear-gradient(135deg, #0d2419, #0f2d1e); border: 1px solid rgba(34,197,94,0.35);
+    border-radius: 20px; padding: 2rem; text-align: center; position: relative; overflow: hidden; }
+.result-ok::before { content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(34,197,94,0.1) 0%, transparent 60%); }
+.result-ok .icon { font-size: 2.5rem; margin-bottom: 0.4rem; }
+.result-ok .title { font-size: 1.6rem; font-weight: 800; color: #86efac; }
+.result-ok .desc { font-size: 0.82rem; color: #4ade80; opacity: 0.8; margin-top: 0.2rem; }
+
+/* STAT CHIPS */
+.stat-chip { background: #1a1d2e; border: 1px solid #2d3152; border-radius: 12px; padding: 0.9rem 1rem; text-align: center; }
+.stat-chip .s-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #475569; font-weight: 600; }
+.stat-chip .s-value { font-size: 1.5rem; font-weight: 700; margin-top: 0.1rem; font-family: 'DM Mono', monospace; }
+.stat-chip .s-value.indigo { color: #818cf8; }
+.stat-chip .s-value.coral { color: #f87171; }
+.stat-chip .s-value.emerald { color: #4ade80; }
+.stat-chip .s-value.amber { color: #fbbf24; }
+
+/* RECOMMENDATIONS */
+.rec-item { background: #1e2235; border-left: 3px solid #6366f1; border-radius: 0 10px 10px 0;
+    padding: 0.7rem 1rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #cbd5e1;
+    display: flex; align-items: flex-start; gap: 0.6rem; }
+.rec-item .rec-icon { font-size: 1rem; flex-shrink: 0; }
+.rec-item strong { color: #e2e8f0; }
+.rec-item.warn { border-color: #f59e0b; }
+.rec-item.danger { border-color: #ef4444; }
+.rec-item.success { border-color: #22c55e; background: #0d2419; }
+.rec-item.info { border-color: #38bdf8; }
+
+/* SIDEBAR */
+section[data-testid="stSidebar"] { background: #13151f !important; border-right: 1px solid #1e2235 !important; }
+section[data-testid="stSidebar"] .block-container { padding: 1.5rem 1rem; }
+.sidebar-logo { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: #475569; letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid #1e2235; }
+.sidebar-logo span { color: #6366f1; font-size: 1rem; }
+.score-ring { display: flex; flex-direction: column; align-items: center; padding: 1rem;
+    background: #1a1d2e; border-radius: 14px; border: 1px solid #2d3152; margin-bottom: 1rem; }
+.score-ring .score-num { font-size: 2.2rem; font-weight: 700; font-family: 'DM Mono', monospace; color: #818cf8; line-height: 1; }
+.score-ring .score-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.15em; color: #475569; margin-top: 0.2rem; font-weight: 600; }
+.score-ring .score-sub { font-size: 0.72rem; color: #64748b; margin-top: 0.4rem; }
+.feat-tag { display: inline-flex; align-items: center; gap: 0.3rem; background: #0f1117; border: 1px solid #2d3152;
+    border-radius: 8px; padding: 0.25rem 0.6rem; font-size: 0.72rem; color: #94a3b8;
+    font-family: 'DM Mono', monospace; margin: 0.18rem; }
+
+/* TABS */
+.stTabs [data-baseweb="tab-list"] { background: #1a1d2e !important; border-radius: 12px !important; padding: 4px !important;
+    gap: 2px !important; border: 1px solid #2d3152 !important; }
+.stTabs [data-baseweb="tab"] { background: transparent !important; border-radius: 9px !important; color: #64748b !important;
+    font-weight: 600 !important; font-size: 0.82rem !important; padding: 0.5rem 1.2rem !important; transition: all 0.2s !important; }
+.stTabs [aria-selected="true"] { background: #6366f1 !important; color: #fff !important; }
+.stTabs [data-baseweb="tab-panel"] { padding-top: 1.2rem !important; }
+.stTabs [data-baseweb="tab-border"] { display: none !important; }
+
+hr { border-color: #1e2235 !important; margin: 1.2rem 0 !important; }
+.stAlert { border-radius: 10px !important; }
+.stProgress > div > div > div { background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899) !important; border-radius: 20px !important; }
+.stProgress > div > div { background: #1e2235 !important; border-radius: 20px !important; height: 8px !important; }
+.stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
+.hint { font-size: 0.72rem; color: #475569; margin: -0.4rem 0 0.7rem; font-family: 'DM Mono', monospace; }
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# LOAD MODEL
+# LOAD ARTIFACTS (model, scaler, fitur, metadata) — semua harus konsisten
 # ─────────────────────────────────────────────────────────────
 MODEL_DIR = Path("models")
 
 @st.cache_resource
 def load_artifacts():
-    artifacts = {}
     files = {
-        'model': MODEL_DIR / 'best_model.pkl',
-        'scaler': MODEL_DIR / 'scaler.pkl',
-        'scaler_top': MODEL_DIR / 'scaler_top.pkl',
-        'label_enc': MODEL_DIR / 'label_encoders.pkl',
-        'top_feat': MODEL_DIR / 'top_features.pkl',
-        'all_feat': MODEL_DIR / 'all_features.pkl',
-        'metadata': MODEL_DIR / 'model_metadata.pkl',
+        'model'   : MODEL_DIR / 'best_model.pkl',
+        'scaler'  : MODEL_DIR / 'scaler.pkl',
+        'le'      : MODEL_DIR / 'label_encoders.pkl',
+        'topfeat' : MODEL_DIR / 'top_features.pkl',
+        'allfeat' : MODEL_DIR / 'all_features.pkl',
+        'meta'    : MODEL_DIR / 'model_metadata.pkl',
     }
-    missing = []
-    for key, path in files.items():
-        if path.exists():
+    arts, missing = {}, []
+    for k, p in files.items():
+        if p.exists():
             try:
-                artifacts[key] = joblib.load(path)
-            except:
-                artifacts[key] = None
+                arts[k] = joblib.load(p)
+            except Exception as e:
+                arts[k] = None
         else:
-            missing.append(str(path))
-    if missing:
-        artifacts['_missing'] = missing
-    return artifacts
+            missing.append(p.name)
+    arts['_missing'] = missing
+    return arts
 
 arts = load_artifacts()
 
-if '_missing' in arts:
-    st.error("⚠️ Model tidak ditemukan. Jalankan `python main.py` dulu!")
+if arts.get('model') is None or arts.get('scaler') is None or not arts.get('topfeat'):
+    st.error("⚠️ File model belum lengkap / belum dibuat.")
+    st.markdown("Jalankan terlebih dahulu:")
+    st.code("python main.py", language="bash")
+    if arts.get('_missing'):
+        st.write("File yang hilang:", ", ".join(arts['_missing']))
     st.stop()
 
-if arts.get('model') is None:
-    st.error("❌ Model corrupt!")
+model     = arts['model']
+scaler    = arts['scaler']
+top_feat  = arts['topfeat']
+le_map    = arts.get('le', {}) or {}
+meta      = arts.get('meta', {}) or {}
+
+# Validasi konsistensi jumlah fitur model vs scaler vs top_feat
+n_model  = getattr(model, 'n_features_in_', len(top_feat))
+n_scaler = getattr(scaler, 'n_features_in_', len(top_feat))
+if len(top_feat) != n_scaler or len(top_feat) != n_model:
+    st.error(
+        f"⚠️ Artefak tidak sinkron — top_features memiliki {len(top_feat)} fitur, "
+        f"namun scaler mengharapkan {n_scaler} dan model mengharapkan {n_model}. "
+        "Jalankan ulang `python main.py` untuk membuat ulang artefak yang konsisten."
+    )
     st.stop()
 
-model = arts['model']
-scaler = arts.get('scaler_top') or arts.get('scaler')
-top_feat = arts.get('top_feat', [])
-meta = arts.get('metadata', {})
+acc_val = meta.get('test_accuracy', 0.0)
+f1_val  = meta.get('test_f1', 0.0)
+model_name = meta.get('best_model_name', 'Model Terbaik')
 
-# ─────────────────────────────────────────────────────────────
-# HEADER
-# ─────────────────────────────────────────────────────────────
-st.markdown(f"""
-<div class="main-header">
-    <h1>🚀 Customer Churn Predictor Pro</h1>
-    <p>Prediksi churn customer dengan 10 fitur utama</p>
-    <div class="header-badge">⚡ Akurasi <span>{meta.get('test_accuracy', 0.8923):.1%}</span> · F1 <span>{meta.get('test_f1', 0.8323):.3f}</span></div>
-</div>
-""", unsafe_allow_html=True)
+# Konfigurasi tampilan tiap fitur (label, ikon, rentang wajar)
+FIELD_META = {
+    'satisfaction_score':         {'icon':'⭐','label':'Skor Kepuasan Pelanggan','min':1,'max':10,'default':7,'step':1,'help':'1 = sangat tidak puas, 10 = sangat puas','hint':'1 = sangat tidak puas · 10 = sangat puas'},
+    'support_tickets':            {'icon':'🎫','label':'Jumlah Tiket Support','min':0,'max':20,'default':1,'step':1,'help':'Berapa kali menghubungi support','hint':'Semakin banyak → risiko lebih tinggi'},
+    'avg_session_time':           {'icon':'⏱️','label':'Rata-rata Durasi Sesi (menit)','min':0.0,'max':60.0,'default':5.0,'step':0.5,'help':'Rata-rata waktu aktif per kunjungan','hint':'Durasi lebih lama = lebih engaged'},
+    'last_3_month_purchase_freq': {'icon':'🛍️','label':'Frekuensi Beli 3 Bulan Terakhir','min':0,'max':30,'default':3,'step':1,'help':'Jumlah transaksi 3 bulan terakhir','hint':'0 = tidak pernah beli dalam 3 bulan'},
+    'total_spent':                {'icon':'💰','label':'Total Pengeluaran ($)','min':0.0,'max':10000.0,'default':500.0,'step':50.0,'help':'Akumulasi total belanja','hint':'Total historis sejak bergabung'},
+    'is_premium_user':            {'icon':'👑','label':'Status Premium (0/1)','min':0,'max':1,'default':0,'step':1,'help':'0 = reguler, 1 = premium','hint':'0 = reguler · 1 = premium'},
+    'delivery_delay_days':        {'icon':'📦','label':'Rata-rata Keterlambatan Kirim (hari)','min':0,'max':30,'default':2,'step':1,'help':'Rata-rata hari keterlambatan','hint':'Tinggi = pengalaman buruk'},
+    'total_visits':                {'icon':'👣','label':'Total Kunjungan','min':0,'max':500,'default':50,'step':1,'help':'Total kunjungan ke platform','hint':'Lebih banyak = lebih aktif'},
+    'age':                         {'icon':'🎂','label':'Usia','min':18,'max':80,'default':35,'step':1,'help':'Usia pelanggan','hint':''},
+    'nps_score':                   {'icon':'📈','label':'NPS Score','min':-100,'max':100,'default':0,'step':1,'help':'Net Promoter Score','hint':'-100 sangat negatif · 100 sangat positif'},
+    'email_open_rate':             {'icon':'📧','label':'Email Open Rate','min':0.0,'max':1.0,'default':0.3,'step':0.01,'help':'Proporsi email yang dibuka','hint':'0 = tidak pernah · 1 = selalu dibuka'},
+    'email_click_rate':            {'icon':'🖱️','label':'Email Click Rate','min':0.0,'max':1.0,'default':0.1,'step':0.01,'help':'Proporsi email yang diklik','hint':''},
+    'discount_used':               {'icon':'🏷️','label':'Diskon Dipakai','min':0,'max':50,'default':3,'step':1,'help':'Jumlah diskon yang pernah digunakan','hint':''},
+    'refund_requested':            {'icon':'↩️','label':'Permintaan Refund','min':0,'max':10,'default':0,'step':1,'help':'Jumlah permintaan refund','hint':''},
+    'marketing_spend_per_user':    {'icon':'📣','label':'Marketing Spend per User ($)','min':0.0,'max':500.0,'default':30.0,'step':5.0,'help':'Biaya marketing per pelanggan','hint':''},
+    'lifetime_value':              {'icon':'💎','label':'Lifetime Value ($)','min':0.0,'max':20000.0,'default':1500.0,'step':50.0,'help':'Estimasi nilai total pelanggan','hint':''},
+    'avg_order_value':             {'icon':'🧾','label':'Rata-rata Nilai Order ($)','min':0.0,'max':2000.0,'default':100.0,'step':5.0,'help':'Nilai rata-rata per transaksi','hint':''},
+    'pages_per_session':           {'icon':'📄','label':'Halaman per Sesi','min':1,'max':50,'default':5,'step':1,'help':'Jumlah halaman dilihat per sesi','hint':''},
+}
+CAT_OPTIONS = {
+    'gender': ['Male','Female','Other'],
+    'subscription_type': ['Basic','Standard','Premium'],
+    'country': ['USA','UK','Germany','France','India'],
+    'city': ['New York','London','Berlin','Paris','Mumbai'],
+    'acquisition_channel': ['Organic','Paid','Referral','Social','Email'],
+    'device_type': ['Mobile','Desktop','Tablet'],
+    'payment_method': ['Credit Card','PayPal','Debit Card','Bank Transfer'],
+}
 
 # ─────────────────────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🧠 Model Info")
+    st.markdown('<div class="sidebar-logo"><span>📡</span> ChurnPredictor</div>', unsafe_allow_html=True)
     st.markdown(f"""
-    <div class="metric-box">
-        <div class="label">Model</div>
-        <div class="value">{meta.get('best_model_name', 'Voting Ensemble')}</div>
-        <div style="margin-top:0.5rem;"></div>
-        <div class="label">Akurasi</div>
-        <div class="value blue">{meta.get('test_accuracy', 0.8923):.2%}</div>
-        <div style="margin-top:0.3rem;"></div>
-        <div class="label">F1-Score</div>
-        <div class="value pink">{meta.get('test_f1', 0.8323):.2%}</div>
+    <div class="score-ring">
+        <div class="score-num">{acc_val:.0%}</div>
+        <div class="score-label">Akurasi Model</div>
+        <div class="score-sub">F1 {f1_val:.3f} · {model_name}</div>
     </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("### 📌 10 Fitur Utama")
-    emojis = ['⭐', '🎫', '⏱️', '🛍️', '💰', '👑', '📦', '🧑', '👀', '📊']
-    for i, feat in enumerate(top_feat[:10], 1):
-        st.markdown(f"{emojis[i-1]} `{feat.replace('_', ' ').title()}`")
-    
+
+    st.markdown('<p style="font-size:0.65rem;color:#475569;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;margin:1rem 0 0.5rem">Fitur Aktif</p>', unsafe_allow_html=True)
+    feat_html = ''.join([f'<span class="feat-tag">◆ {f.replace("_"," ")}</span>' for f in top_feat])
+    st.markdown(feat_html, unsafe_allow_html=True)
+
     st.divider()
-    
-    if 'prediction_log' in st.session_state and len(st.session_state.prediction_log) > 0:
-        st.markdown("### 📊 Statistik")
+    st.markdown('<p style="font-size:0.65rem;color:#475569;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;margin:0 0 0.5rem">Panduan Cepat</p>', unsafe_allow_html=True)
+    for step, txt in [("1","Isi form di bawah"), ("2","Klik Prediksi"), ("3","Lihat hasil & saran")]:
+        st.markdown(f'<p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0"><span style="color:#6366f1;font-family:DM Mono;font-weight:700">{step}.</span> {txt}</p>', unsafe_allow_html=True)
+
+    if st.session_state.get('prediction_log'):
         log_df = pd.DataFrame(st.session_state.prediction_log)
-        total = len(log_df)
-        churn_count = log_df[log_df['prediction'] == 1].shape[0]
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Total", total)
-        with col2:
-            st.metric("⚠️ Churn", churn_count, delta=f"{churn_count/total*100:.1f}%")
-
-# ─────────────────────────────────────────────────────────────
-# TAB 1: PREDIKSI TUNGGAL
-# ─────────────────────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(["🔮 Prediksi Tunggal", "📊 Batch Prediction", "📈 Dashboard"])
-
-with tab1:
-    st.markdown('<div class="info-box">💡 <strong>Isi 10 data berikut</strong> untuk memprediksi churn.</div>', unsafe_allow_html=True)
-
-    # ── TOMBOL CONTOH ──
-    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
-    with col_s1:
-        if st.button("🎲 Random", use_container_width=True):
-            st.session_state['sample'] = {
-                'satisfaction_score': random.randint(1, 10),
-                'support_tickets': random.randint(0, 10),
-                'avg_session_time': round(random.uniform(0.5, 15), 1),
-                'last_3_month_purchase_freq': random.randint(0, 15),
-                'total_spent': random.randint(50, 2000),
-                'is_premium_user': random.randint(0, 1),
-                'delivery_delay_days': random.randint(0, 15),
-                'age': random.randint(18, 60),
-                'total_visits': random.randint(1, 100),
-                'nps_score': random.randint(-100, 100)
-            }
-    with col_s2:
-        if st.button("⚠️ CHURN", use_container_width=True):
-            st.session_state['sample'] = {
-                'satisfaction_score': 1,
-                'support_tickets': 10,
-                'avg_session_time': 0.5,
-                'last_3_month_purchase_freq': 0,
-                'total_spent': 10,
-                'is_premium_user': 0,
-                'delivery_delay_days': 20,
-                'age': 18,
-                'total_visits': 1,
-                'nps_score': -100
-            }
-    with col_s3:
-        if st.button("✅ TIDAK CHURN", use_container_width=True):
-            st.session_state['sample'] = {
-                'satisfaction_score': 9,
-                'support_tickets': 0,
-                'avg_session_time': 12.5,
-                'last_3_month_purchase_freq': 12,
-                'total_spent': 2500,
-                'is_premium_user': 1,
-                'delivery_delay_days': 1,
-                'age': 35,
-                'total_visits': 150,
-                'nps_score': 100
-            }
-    with col_s4:
-        if st.button("🔄 Reset", use_container_width=True):
-            if 'sample' in st.session_state:
-                del st.session_state['sample']
-            st.rerun()
-
-    # ── PANDUAN ──
-    with st.expander("📖 Panduan: Cara Mendapatkan Hasil CHURN / TIDAK CHURN"):
-        st.markdown("""
-        <div class="guide-churn">
-            <h4 style="color: #ff6b6b; margin: 0 0 0.5rem 0;">🔴 Data untuk Hasil CHURN</h4>
-            <table class="guide-table">
-                <tr>
-                    <th class="churn-header">Fitur</th>
-                    <th class="churn-header">Nilai</th>
-                    <th class="churn-header">Keterangan</th>
-                </tr>
-                <tr><td>⭐ Skor Kepuasan</td><td><span class="guide-value churn-value">1-3</span></td><td>Sangat tidak puas</td></tr>
-                <tr><td>🎫 Tiket Support</td><td><span class="guide-value churn-value">5-10</span></td><td>Banyak komplain</td></tr>
-                <tr><td>⏱️ Rata-rata Sesi</td><td><span class="guide-value churn-value">0.5-2</span></td><td>Sangat singkat</td></tr>
-                <tr><td>🛍️ Frekuensi Pembelian</td><td><span class="guide-value churn-value">0-1</span></td><td>Jarang beli</td></tr>
-                <tr><td>💰 Total Pengeluaran</td><td><span class="guide-value churn-value">0-50</span></td><td>Sedikit belanja</td></tr>
-                <tr><td>👑 Premium User</td><td><span class="guide-value churn-value">0</span></td><td>Tidak premium</td></tr>
-                <tr><td>📦 Keterlambatan Kirim</td><td><span class="guide-value churn-value">10-20</span></td><td>Sering telat</td></tr>
-                <tr><td>🧑 Usia</td><td><span class="guide-value churn-value">18-25</span></td><td>Usia muda</td></tr>
-                <tr><td>👀 Total Kunjungan</td><td><span class="guide-value churn-value">1-5</span></td><td>Jarang berkunjung</td></tr>
-                <tr><td>📊 NPS Score</td><td><span class="guide-value churn-value">-100</span></td><td>Tidak loyal</td></tr>
-            </table>
-            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #555;">
-                📋 <b>Contoh:</b> Skor=1, Support=10, Sesi=0.5, Beli=0, Pengeluaran=10, Premium=0, Telat=20, Usia=18, Kunjungan=1, NPS=-100
-            </p>
-        </div>
-        
-        <div class="guide-nochurn">
-            <h4 style="color: #00b894; margin: 0 0 0.5rem 0;">🟢 Data untuk Hasil TIDAK CHURN</h4>
-            <table class="guide-table">
-                <tr>
-                    <th class="nochurn-header">Fitur</th>
-                    <th class="nochurn-header">Nilai</th>
-                    <th class="nochurn-header">Keterangan</th>
-                </tr>
-                <tr><td>⭐ Skor Kepuasan</td><td><span class="guide-value nochurn-value">8-10</span></td><td>Sangat puas</td></tr>
-                <tr><td>🎫 Tiket Support</td><td><span class="guide-value nochurn-value">0-1</span></td><td>Tidak ada keluhan</td></tr>
-                <tr><td>⏱️ Rata-rata Sesi</td><td><span class="guide-value nochurn-value">8-15</span></td><td>Lama berkunjung</td></tr>
-                <tr><td>🛍️ Frekuensi Pembelian</td><td><span class="guide-value nochurn-value">8-15</span></td><td>Sering beli</td></tr>
-                <tr><td>💰 Total Pengeluaran</td><td><span class="guide-value nochurn-value">1000-5000</span></td><td>Banyak belanja</td></tr>
-                <tr><td>👑 Premium User</td><td><span class="guide-value nochurn-value">1</span></td><td>Premium</td></tr>
-                <tr><td>📦 Keterlambatan Kirim</td><td><span class="guide-value nochurn-value">0-2</span></td><td>Tepat waktu</td></tr>
-                <tr><td>🧑 Usia</td><td><span class="guide-value nochurn-value">30-50</span></td><td>Usia dewasa</td></tr>
-                <tr><td>👀 Total Kunjungan</td><td><span class="guide-value nochurn-value">50-200</span></td><td>Sering berkunjung</td></tr>
-                <tr><td>📊 NPS Score</td><td><span class="guide-value nochurn-value">50-100</span></td><td>Sangat loyal</td></tr>
-            </table>
-            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #555;">
-                📋 <b>Contoh:</b> Skor=9, Support=0, Sesi=12.5, Beli=12, Pengeluaran=2500, Premium=1, Telat=1, Usia=35, Kunjungan=150, NPS=100
-            </p>
-        </div>
-        
-        <div class="guide-tips">
-            <b>💡 Tips Cepat:</b><br>
-            🔴 <b>CHURN</b> → Semua nilai RENDAH (kecuali Tiket Support & Keterlambatan = TINGGI)<br>
-            🟢 <b>TIDAK CHURN</b> → Semua nilai TINGGI (kecuali Tiket Support & Keterlambatan = RENDAH)
+        total, n_churn = len(log_df), (log_df['prediction']==1).sum()
+        st.divider()
+        st.markdown('<p style="font-size:0.65rem;color:#475569;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;margin:0 0 0.5rem">Sesi Ini</p>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">
+            <div class="stat-chip"><div class="s-label">Total</div><div class="s-value indigo">{total}</div></div>
+            <div class="stat-chip"><div class="s-label">⚠️ Churn</div><div class="s-value coral">{n_churn}</div></div>
         </div>
         """, unsafe_allow_html=True)
 
-    # ── 10 FITUR ──
-    FEATURES = {
-        'satisfaction_score': {'min': 1, 'max': 10, 'default': 7, 'label': '⭐ Skor Kepuasan (1-10)', 'step': 1},
-        'support_tickets': {'min': 0, 'max': 20, 'default': 1, 'label': '🎫 Tiket Support', 'step': 1},
-        'avg_session_time': {'min': 0.0, 'max': 60.0, 'default': 5.0, 'label': '⏱️ Rata-rata Sesi (menit)', 'step': 0.1},
-        'last_3_month_purchase_freq': {'min': 0, 'max': 30, 'default': 3, 'label': '🛍️ Frekuensi Pembelian 3 Bulan', 'step': 1},
-        'total_spent': {'min': 0.0, 'max': 10000.0, 'default': 500.0, 'label': '💰 Total Pengeluaran ($)', 'step': 10.0},
-        'is_premium_user': {'min': 0, 'max': 1, 'default': 1, 'label': '👑 Premium User (0/1)', 'step': 1},
-        'delivery_delay_days': {'min': 0, 'max': 30, 'default': 6, 'label': '📦 Keterlambatan Kirim (hari)', 'step': 1},
-        'age': {'min': 18, 'max': 80, 'default': 35, 'label': '🧑 Usia (tahun)', 'step': 1},
-        'total_visits': {'min': 0, 'max': 500, 'default': 50, 'label': '👀 Total Kunjungan', 'step': 1},
-        'nps_score': {'min': -100, 'max': 100, 'default': 30, 'label': '📊 NPS Score (-100 - 100)', 'step': 1},
-    }
+# ─────────────────────────────────────────────────────────────
+# HERO
+# ─────────────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="hero">
+    <div class="hero-eyebrow">Machine Learning · Customer Intelligence</div>
+    <h1>Prediksi <span>Customer Churn</span><br>Sebelum Terlambat</h1>
+    <p class="hero-sub">Masukkan data pelanggan, dan model AI akan menghitung risiko churn beserta langkah retensi yang tepat.</p>
+    <div class="hero-pills">
+        <span class="pill">📡 {model_name}</span>
+        <span class="pill green">✓ Akurasi {acc_val:.1%}</span>
+        <span class="pill cyan">⚡ {len(top_feat)} fitur</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────────────────────
+# TABS
+# ─────────────────────────────────────────────────────────────
+tab1, tab2, tab3 = st.tabs(["🔮  Prediksi Tunggal", "📂  Prediksi Batch", "📊  Riwayat & Analisis"])
+
+def get_field_cfg(name):
+    """Ambil konfigurasi tampilan untuk fitur, dengan fallback default jika tidak terdaftar."""
+    if name in FIELD_META:
+        return FIELD_META[name]
+    return {'icon':'🔹','label':name.replace('_',' ').title(),'min':0.0,'max':1000.0,
+            'default':0.0,'step':1.0,'help':'','hint':''}
+
+# ═══════════════════════════════════════════════════════════════
+# TAB 1 — PREDIKSI TUNGGAL
+# ═══════════════════════════════════════════════════════════════
+with tab1:
+    st.markdown('<p style="font-size:0.75rem;color:#475569;margin-bottom:0.4rem;font-weight:600">Isi cepat:</p>', unsafe_allow_html=True)
+    cq1, cq2, cq3, cq4 = st.columns(4)
+
+    with cq1:
+        st.markdown('<div class="sample-btn">', unsafe_allow_html=True)
+        if st.button("🎲 Acak", use_container_width=True):
+            st.session_state['_samp'] = {f: round(random.uniform(get_field_cfg(f)['min'], get_field_cfg(f)['max']),2)
+                                         if isinstance(get_field_cfg(f)['default'], float)
+                                         else random.randint(int(get_field_cfg(f)['min']), int(get_field_cfg(f)['max']))
+                                         for f in top_feat if f not in le_map}
+        st.markdown('</div>', unsafe_allow_html=True)
+    with cq2:
+        st.markdown('<div class="sample-btn">', unsafe_allow_html=True)
+        if st.button("⚠️ Contoh Churn", use_container_width=True):
+            churn_vals = {'satisfaction_score':2,'support_tickets':8,'avg_session_time':1.2,
+                          'last_3_month_purchase_freq':0,'total_spent':50.0,'is_premium_user':0,
+                          'delivery_delay_days':12,'total_visits':5,'nps_score':-60,
+                          'email_open_rate':0.05,'discount_used':0,'refund_requested':3}
+            st.session_state['_samp'] = {f: churn_vals.get(f, get_field_cfg(f)['default']) for f in top_feat if f not in le_map}
+        st.markdown('</div>', unsafe_allow_html=True)
+    with cq3:
+        st.markdown('<div class="sample-btn">', unsafe_allow_html=True)
+        if st.button("✅ Contoh Loyal", use_container_width=True):
+            loyal_vals = {'satisfaction_score':9,'support_tickets':0,'avg_session_time':12.5,
+                          'last_3_month_purchase_freq':12,'total_spent':2500.0,'is_premium_user':1,
+                          'delivery_delay_days':1,'total_visits':180,'nps_score':80,
+                          'email_open_rate':0.85,'discount_used':10,'refund_requested':0}
+            st.session_state['_samp'] = {f: loyal_vals.get(f, get_field_cfg(f)['default']) for f in top_feat if f not in le_map}
+        st.markdown('</div>', unsafe_allow_html=True)
+    with cq4:
+        st.markdown('<div class="sample-btn">', unsafe_allow_html=True)
+        if st.button("🗑️ Reset", use_container_width=True):
+            st.session_state.pop('_samp', None); st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    samp = st.session_state.get('_samp', {})
+    st.markdown("<div style='height:0.8rem'></div>", unsafe_allow_html=True)
+
+    # Pisahkan fitur numerik & kategorikal yang ada di top_feat
+    num_feats = [f for f in top_feat if f not in le_map]
+    cat_feats = [f for f in top_feat if f in le_map]
+    half = max(1, (len(num_feats)+1)//2)
+
+    left, right = st.columns(2, gap="medium")
     user_input = {}
-    if 'sample' in st.session_state:
-        for k, v in st.session_state['sample'].items():
-            if k in FEATURES:
-                FEATURES[k]['default'] = v
 
-    # ── RENDER 2 KOLOM ──
-    c1, c2 = st.columns(2)
-    
-    # Kiri: 5 fitur pertama
-    with c1:
-        st.markdown('<div class="card-section"><div class="card-title">📊 Fitur Utama <span class="badge">5</span></div>', unsafe_allow_html=True)
-        for k in ['satisfaction_score', 'support_tickets', 'avg_session_time', 'last_3_month_purchase_freq', 'total_spent']:
-            f = FEATURES[k]
-            if isinstance(f['default'], float):
-                user_input[k] = st.number_input(f['label'], min_value=float(f['min']), max_value=float(f['max']), value=float(f['default']), step=float(f['step']), key=f"a_{k}")
+    with left:
+        st.markdown('<div class="glass-card"><div class="card-label"><span class="dot"></span>Data Utama</div>', unsafe_allow_html=True)
+        for f in num_feats[:half]:
+            cfg = get_field_cfg(f)
+            is_float = isinstance(cfg['default'], float)
+            val = samp.get(f, cfg['default'])
+            if is_float:
+                user_input[f] = st.number_input(f"{cfg['icon']} {cfg['label']}",
+                    min_value=float(cfg['min']), max_value=float(cfg['max']),
+                    value=float(val), step=float(cfg['step']), help=cfg['help'], key=f"in_{f}")
             else:
-                user_input[k] = st.number_input(f['label'], min_value=int(f['min']), max_value=int(f['max']), value=int(f['default']), step=int(f['step']), key=f"a_{k}")
+                user_input[f] = st.number_input(f"{cfg['icon']} {cfg['label']}",
+                    min_value=int(cfg['min']), max_value=int(cfg['max']),
+                    value=int(val), step=int(cfg['step']), help=cfg['help'], key=f"in_{f}")
+            if cfg['hint']:
+                st.markdown(f'<p class="hint">{cfg["hint"]}</p>', unsafe_allow_html=True)
+        for f in cat_feats[:max(0, len(cat_feats)//2)]:
+            opts = CAT_OPTIONS.get(f, list(getattr(le_map.get(f), 'classes_', ['-'])))
+            user_input[f] = st.selectbox(f"🏷️ {f.replace('_',' ').title()}", opts, key=f"in_{f}")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Kanan: 5 fitur sisanya
-    with c2:
-        st.markdown('<div class="card-section"><div class="card-title">💰 Fitur Tambahan <span class="badge">5</span></div>', unsafe_allow_html=True)
-        for k in ['is_premium_user', 'delivery_delay_days', 'age', 'total_visits', 'nps_score']:
-            f = FEATURES[k]
-            if isinstance(f['default'], float):
-                user_input[k] = st.number_input(f['label'], min_value=float(f['min']), max_value=float(f['max']), value=float(f['default']), step=float(f['step']), key=f"b_{k}")
+    with right:
+        st.markdown('<div class="glass-card"><div class="card-label"><span class="dot"></span>Data Tambahan</div>', unsafe_allow_html=True)
+        for f in num_feats[half:]:
+            cfg = get_field_cfg(f)
+            is_float = isinstance(cfg['default'], float)
+            val = samp.get(f, cfg['default'])
+            if is_float:
+                user_input[f] = st.number_input(f"{cfg['icon']} {cfg['label']}",
+                    min_value=float(cfg['min']), max_value=float(cfg['max']),
+                    value=float(val), step=float(cfg['step']), help=cfg['help'], key=f"in_{f}")
             else:
-                user_input[k] = st.number_input(f['label'], min_value=int(f['min']), max_value=int(f['max']), value=int(f['default']), step=int(f['step']), key=f"b_{k}")
+                user_input[f] = st.number_input(f"{cfg['icon']} {cfg['label']}",
+                    min_value=int(cfg['min']), max_value=int(cfg['max']),
+                    value=int(val), step=int(cfg['step']), help=cfg['help'], key=f"in_{f}")
+            if cfg['hint']:
+                st.markdown(f'<p class="hint">{cfg["hint"]}</p>', unsafe_allow_html=True)
+        for f in cat_feats[max(0, len(cat_feats)//2):]:
+            opts = CAT_OPTIONS.get(f, list(getattr(le_map.get(f), 'classes_', ['-'])))
+            user_input[f] = st.selectbox(f"🏷️ {f.replace('_',' ').title()}", opts, key=f"in_{f}")
+
+        # quick risk preview (heuristik ringan, bukan model asli)
+        s = user_input.get('satisfaction_score', 7); t = user_input.get('support_tickets', 0)
+        fr = user_input.get('last_3_month_purchase_freq', 3); dl = user_input.get('delivery_delay_days', 0)
+        pr = user_input.get('is_premium_user', 0)
+        raw_risk = max(0, min(100, (10-s)*7 + t*4 - fr*3 + dl*2.5 - pr*8))
+        risk_color = "#ef4444" if raw_risk > 60 else "#f59e0b" if raw_risk > 35 else "#22c55e"
+        st.markdown(f"""
+        <div style="background:#0f1117;border:1px solid #2d3152;border-radius:12px;padding:1rem;margin-top:0.5rem">
+            <p style="font-size:0.6rem;color:#475569;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;margin:0 0 0.4rem">Estimasi Risiko Cepat</p>
+            <p style="font-size:1.6rem;font-weight:700;font-family:'DM Mono';color:{risk_color};margin:0;line-height:1">{int(raw_risk)}<span style="font-size:0.8rem;opacity:0.6">/100</span></p>
+            <p style="font-size:0.72rem;color:#475569;margin:0.2rem 0 0">{"⚠️ Risiko Tinggi" if raw_risk>60 else "⚡ Risiko Sedang" if raw_risk>35 else "✅ Risiko Rendah"} (indikator awal)</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ─────────────────────────────────────────────────────────────
-    # PREPROCESS INPUT
-    # ─────────────────────────────────────────────────────────────
-    def preprocess_input(raw: dict) -> np.ndarray:
-        ordered = [raw.get(f, 0) for f in top_feat]
-        df = pd.DataFrame([ordered], columns=top_feat)
-        return scaler.transform(df)
+    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+    _, btn_col, _ = st.columns([1,2,1])
+    with btn_col:
+        do_predict = st.button("📡  Analisis & Prediksi Churn", use_container_width=True)
 
-    st.divider()
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-    with col_btn2:
-        predict_btn = st.button("🚀 Prediksi Churn", use_container_width=True)
-
-    if predict_btn:
-        with st.spinner("⏳ Memproses..."):
-            try:
-                X = preprocess_input(user_input)
-                pred = model.predict(X)[0]
-                proba = model.predict_proba(X)[0]
-                pc = proba[1] * 100
-                pn = proba[0] * 100
-
-                if 'prediction_log' not in st.session_state:
-                    st.session_state.prediction_log = []
-                st.session_state.prediction_log.append({
-                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    **user_input,
-                    'prediction': int(pred),
-                    'prob_churn': round(pc, 2)
-                })
-
-                st.divider()
-                st.markdown("### 📋 Hasil Prediksi")
-                col_res, col_prob = st.columns([1, 1])
-
-                with col_res:
-                    if pred == 1:
-                        st.markdown('<div class="result-churn">⚠️ CHURN<span class="sub">Pelanggan berpotensi meninggalkan layanan</span></div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="result-ok">✅ TIDAK CHURN<span class="sub">Pelanggan kemungkinan tetap bertahan</span></div>', unsafe_allow_html=True)
-
-                with col_prob:
-                    st.markdown("#### Probabilitas")
-                    col_m1, col_m2 = st.columns(2)
-                    with col_m1:
-                        st.metric("🔴 Churn", f"{pc:.1f}%")
-                    with col_m2:
-                        st.metric("🟢 Tidak Churn", f"{pn:.1f}%")
-                    st.progress(int(pc), text=f"Risiko Churn: {pc:.1f}%")
-
-                st.markdown("### 💡 Rekomendasi")
-                if pred == 1:
-                    recs = []
-                    if user_input.get('satisfaction_score', 10) < 6:
-                        recs.append("📞 Hubungi pelanggan — skor kepuasan rendah")
-                    if user_input.get('support_tickets', 0) > 3:
-                        recs.append("🔧 Selesaikan tiket support — terlalu banyak keluhan")
-                    if user_input.get('last_3_month_purchase_freq', 10) < 2:
-                        recs.append("🛍️ Kirim penawaran khusus — pembelian rendah")
-                    if user_input.get('delivery_delay_days', 0) > 5:
-                        recs.append("🚚 Perbaiki pengiriman — keterlambatan tinggi")
-                    if user_input.get('nps_score', 0) < 0:
-                        recs.append("📊 Tingkatkan NPS — pelanggan tidak loyal")
-                    if not recs:
-                        recs.append("🔄 Jalankan program retensi")
-                    for r in recs:
-                        st.warning(r)
-                else:
-                    st.success("✅ Customer sehat. Pertahankan kualitas!")
-                    if user_input.get('satisfaction_score', 0) >= 9:
-                        st.balloons()
-                        st.info("⭐ Pelanggan sangat puas!")
-
-                with st.expander("📄 Detail Data"):
-                    df = pd.DataFrame([user_input]).T.reset_index()
-                    df.columns = ['Fitur', 'Nilai']
-                    st.dataframe(df, use_container_width=True, hide_index=True)
-
-            except Exception as e:
-                st.error(f"❌ Error: {e}")
-
-# =============================================================================
-# TAB 2: BATCH PREDICTION
-# =============================================================================
-with tab2:
-    st.markdown('<div class="info-box">📊 <strong>Upload file CSV</strong> untuk prediksi batch. File harus memiliki 10 kolom fitur.</div>', unsafe_allow_html=True)
-    
-    template_df = pd.DataFrame({
-        'satisfaction_score': [7, 1],
-        'support_tickets': [1, 10],
-        'avg_session_time': [5.0, 0.5],
-        'last_3_month_purchase_freq': [3, 0],
-        'total_spent': [500, 10],
-        'is_premium_user': [1, 0],
-        'delivery_delay_days': [6, 20],
-        'age': [35, 18],
-        'total_visits': [50, 1],
-        'nps_score': [30, -100]
-    })
-    st.download_button("📥 Download Template CSV", template_df.to_csv(index=False), "churn_template.csv", "text/csv", use_container_width=True)
-    
-    uploaded = st.file_uploader("Upload CSV", type=['csv'])
-    if uploaded is not None:
+    if do_predict:
         try:
-            batch_df = pd.read_csv(uploaded)
-            st.success(f"✅ {len(batch_df)} baris data")
-            
-            required = ['satisfaction_score', 'support_tickets', 'avg_session_time', 
-                       'last_3_month_purchase_freq', 'total_spent', 'is_premium_user', 
-                       'delivery_delay_days', 'age', 'total_visits', 'nps_score']
-            missing = [c for c in required if c not in batch_df.columns]
-            if missing:
-                st.error(f"❌ Kolom hilang: {missing}")
-                st.stop()
-            
-            if st.button("🚀 Prediksi Batch", use_container_width=True):
-                with st.spinner(f"⏳ Memproses {len(batch_df)} data..."):
-                    preds, probs = [], []
-                    for _, row in batch_df.iterrows():
-                        X = preprocess_input(row.to_dict())
-                        preds.append(model.predict(X)[0])
-                        probs.append(model.predict_proba(X)[0][1] * 100)
-                    
-                    batch_df['prediction'] = preds
-                    batch_df['prob_churn'] = probs
-                    batch_df['status'] = batch_df['prediction'].apply(lambda x: '⚠️ CHURN' if x == 1 else '✅ TIDAK CHURN')
-                    
-                    st.divider()
-                    st.markdown("### 📊 Hasil Batch")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Total", len(batch_df))
-                    with col2:
-                        st.metric("⚠️ CHURN", batch_df['prediction'].sum())
-                    with col3:
-                        st.metric("✅ TIDAK CHURN", len(batch_df) - batch_df['prediction'].sum())
-                    
-                    st.dataframe(batch_df, use_container_width=True)
-                    
-                    col_chart1, col_chart2 = st.columns(2)
-                    with col_chart1:
-                        counts = batch_df['status'].value_counts()
-                        fig = px.pie(values=counts.values, names=counts.index, title="Distribusi")
-                        st.plotly_chart(fig, use_container_width=True)
-                    with col_chart2:
-                        fig = px.histogram(batch_df, x='prob_churn', nbins=20, title="Probabilitas Churn")
-                        fig.update_layout(xaxis_title="Probabilitas (%)", yaxis_title="Jumlah")
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                    st.download_button(
-                        "📥 Download Hasil",
-                        batch_df.to_csv(index=False),
-                        f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                        "text/csv",
-                        use_container_width=True
-                    )
-                    
-        except Exception as e:
-            st.error(f"❌ Error: {e}")
+            row = {}
+            for f, v in user_input.items():
+                if f in le_map:
+                    try: row[f] = le_map[f].transform([str(v)])[0]
+                    except Exception: row[f] = 0
+                else:
+                    row[f] = v
+            ordered = [row.get(f, 0) for f in top_feat]
+            X_in = np.array([ordered], dtype=float)
+            X_in_s = scaler.transform(X_in)
 
-# =========================================================================
+            pred = model.predict(X_in_s)[0]
+            proba = model.predict_proba(X_in_s)[0] if hasattr(model,'predict_proba') else [1-pred, pred]
+            pc, pn = round(proba[1]*100,1), round(proba[0]*100,1)
+
+            if 'prediction_log' not in st.session_state: st.session_state.prediction_log = []
+            st.session_state.prediction_log.append({'Waktu': datetime.now().strftime('%H:%M:%S'),
+                **user_input, 'prediction': int(pred), 'prob_churn': pc})
+
+            st.markdown("<div style='height:0.8rem'></div>", unsafe_allow_html=True)
+            st.divider()
+            st.markdown("### Hasil Analisis")
+            res_col, gauge_col = st.columns([1,1], gap="medium")
+
+            with res_col:
+                if pred == 1:
+                    st.markdown('<div class="result-churn"><div class="icon">⚠️</div><div class="title">BERPOTENSI CHURN</div><div class="desc">Pelanggan ini kemungkinan akan meninggalkan layanan</div></div>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<div class="result-ok"><div class="icon">✅</div><div class="title">TIDAK CHURN</div><div class="desc">Pelanggan kemungkinan akan tetap bertahan</div></div>', unsafe_allow_html=True)
+                    if user_input.get('satisfaction_score', 0) >= 9: st.balloons()
+
+                st.markdown("<div style='height:0.8rem'></div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+                    <div class="stat-chip"><div class="s-label">🔴 Prob. Churn</div><div class="s-value coral">{pc}%</div></div>
+                    <div class="stat-chip"><div class="s-label">🟢 Prob. Aman</div><div class="s-value emerald">{pn}%</div></div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with gauge_col:
+                fig_gauge = go.Figure(go.Indicator(
+                    mode="gauge+number", value=pc,
+                    number={'suffix':'%','font':{'size':36,'color':'#e2e8f0','family':'DM Mono'}},
+                    title={'text':"Risiko Churn",'font':{'size':13,'color':'#94a3b8'}},
+                    gauge={'axis':{'range':[0,100],'tickcolor':'#475569','tickfont':{'size':10,'color':'#475569'},'nticks':6},
+                           'bar':{'color':'#ef4444' if pc>60 else '#f59e0b' if pc>35 else '#22c55e','thickness':0.28},
+                           'bgcolor':'rgba(0,0,0,0)','bordercolor':'rgba(0,0,0,0)',
+                           'steps':[{'range':[0,35],'color':'rgba(34,197,94,0.1)'},
+                                    {'range':[35,65],'color':'rgba(245,158,11,0.1)'},
+                                    {'range':[65,100],'color':'rgba(239,68,68,0.1)'}],
+                           'threshold':{'line':{'color':'#818cf8','width':2},'thickness':0.75,'value':pc}}))
+                fig_gauge.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                    margin=dict(t=30,b=10,l=20,r=20), height=220, font={'family':'DM Sans'})
+                st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
+                st.progress(int(pc), text=f"Level risiko: {int(pc)}%")
+
+            st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+            st.markdown("### 💡 Rekomendasi Tindakan")
+            recs = []
+            sat = user_input.get('satisfaction_score', 7); tix = user_input.get('support_tickets', 0)
+            freq = user_input.get('last_3_month_purchase_freq', 3); delay = user_input.get('delivery_delay_days', 0)
+            prem = user_input.get('is_premium_user', 0)
+            if pred == 1:
+                if sat <= 4: recs.append(('danger','📞','<strong>Hubungi langsung</strong> — Skor kepuasan sangat rendah. Lakukan follow-up personal segera.'))
+                elif sat <= 6: recs.append(('warn','💬','<strong>Survei kepuasan</strong> — Kirim email survei dan tawarkan solusi.'))
+                if tix >= 5: recs.append(('danger','🔧',f'<strong>Selesaikan {tix} tiket</strong> — Banyak keluhan belum terselesaikan.'))
+                if freq == 0: recs.append(('danger','🛍️','<strong>Reaktivasi pelanggan</strong> — Nol pembelian 3 bulan terakhir.'))
+                elif freq < 3: recs.append(('warn','🎁','<strong>Program loyalitas</strong> — Frekuensi beli rendah.'))
+                if delay >= 7: recs.append(('warn','🚚',f'<strong>Perbaiki logistik</strong> — Rata-rata {delay} hari keterlambatan.'))
+                if prem == 0: recs.append(('info','👑','<strong>Tawarkan upgrade Premium</strong> — Cenderung mengurangi churn.'))
+                if not recs: recs.append(('warn','🔄','<strong>Jalankan program retensi</strong> — Tingkatkan engagement.'))
+            else:
+                recs.append(('success','✅','<strong>Pertahankan kualitas</strong> — Pelanggan dalam kondisi sehat.'))
+                if prem == 0: recs.append(('info','👑','<strong>Peluang upsell</strong> — Tawarkan upgrade ke Premium.'))
+                if sat >= 9: recs.append(('success','⭐','<strong>Minta testimoni</strong> — Pelanggan sangat puas.'))
+            for cls, ico, txt in recs:
+                st.markdown(f'<div class="rec-item {cls}"><span class="rec-icon">{ico}</span><span>{txt}</span></div>', unsafe_allow_html=True)
+
+            with st.expander("🔎 Lihat detail input"):
+                disp = pd.DataFrame([{'Fitur': k.replace('_',' ').title(), 'Nilai': v} for k,v in user_input.items()])
+                st.dataframe(disp, use_container_width=True, hide_index=True)
+
+        except Exception as e:
+            st.error(f"❌ Terjadi error: {e}")
+            st.exception(e)
+
+# ═══════════════════════════════════════════════════════════════
+# TAB 2 — BATCH PREDICTION
+# ═══════════════════════════════════════════════════════════════
+with tab2:
+    st.markdown(f"""
+    <div class="glass-card">
+        <div class="card-label"><span class="dot"></span>Prediksi Banyak Pelanggan Sekaligus</div>
+        <p style="font-size:0.85rem;color:#64748b;margin:0">
+            Upload CSV berisi kolom: <code>{', '.join(top_feat)}</code>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    template = pd.DataFrame([{f: get_field_cfg(f)['default'] for f in top_feat} for _ in range(3)])
+    for i, f in enumerate(top_feat):
+        cfg = get_field_cfg(f)
+        lo, hi = cfg['min'], cfg['max']
+        template[f] = [lo, hi, cfg['default']]
+
+    dl_col, _ = st.columns([1,2])
+    with dl_col:
+        st.download_button("📥 Download Template CSV", data=template.to_csv(index=False),
+            file_name="template_churn.csv", mime="text/csv", use_container_width=True)
+
+    uploaded = st.file_uploader("Upload file CSV", type=['csv'], label_visibility='collapsed')
+    if uploaded:
+        try:
+            bdf = pd.read_csv(uploaded)
+            miss_c = [c for c in top_feat if c not in bdf.columns]
+            if miss_c:
+                st.error(f"❌ Kolom tidak lengkap: `{'`, `'.join(miss_c)}`")
+                st.stop()
+            st.success(f"✅ {len(bdf)} baris siap diproses")
+            if st.button("🚀 Prediksi Semua Data", use_container_width=True):
+                with st.spinner(f"Memproses {len(bdf)} pelanggan..."):
+                    preds, probs = [], []
+                    for _, row in bdf.iterrows():
+                        Xi = scaler.transform(np.array([[row.get(f,0) for f in top_feat]], dtype=float))
+                        preds.append(int(model.predict(Xi)[0]))
+                        probs.append(round(model.predict_proba(Xi)[0][1]*100,1))
+                    bdf['Prediksi'] = ['⚠️ CHURN' if p==1 else '✅ AMAN' for p in preds]
+                    bdf['Prob Churn'] = probs
+
+                n_churn = sum(preds)
+                st.markdown(f"""
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;margin:1rem 0">
+                    <div class="stat-chip"><div class="s-label">Total</div><div class="s-value indigo">{len(bdf)}</div></div>
+                    <div class="stat-chip"><div class="s-label">⚠️ Churn</div><div class="s-value coral">{n_churn}</div></div>
+                    <div class="stat-chip"><div class="s-label">✅ Aman</div><div class="s-value emerald">{len(bdf)-n_churn}</div></div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                cr1, cr2 = st.columns(2)
+                with cr1:
+                    fig_pie = px.pie(names=['⚠️ Churn','✅ Aman'], values=[n_churn, len(bdf)-n_churn],
+                        color_discrete_sequence=['#ef4444','#22c55e'], hole=0.45)
+                    fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        legend_font_color='#94a3b8', font_color='#94a3b8', margin=dict(t=20,b=10,l=10,r=10), height=240)
+                    st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+                with cr2:
+                    fig_hist = px.histogram(bdf, x='Prob Churn', nbins=15, color_discrete_sequence=['#6366f1'])
+                    fig_hist.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        xaxis_color='#475569', yaxis_color='#475569', font_color='#94a3b8',
+                        margin=dict(t=20,b=10,l=10,r=10), height=240,
+                        xaxis_title='Probabilitas Churn (%)', yaxis_title='Jumlah')
+                    st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': False})
+
+                st.dataframe(bdf, use_container_width=True)
+                st.download_button("📥 Download Hasil", data=bdf.to_csv(index=False),
+                    file_name=f"hasil_batch_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                    mime="text/csv", use_container_width=True)
+        except Exception as e:
+            st.error(f"❌ {e}")
+
+# ═══════════════════════════════════════════════════════════════
+# TAB 3 — RIWAYAT & ANALISIS
+# ═══════════════════════════════════════════════════════════════
+with tab3:
+    log = st.session_state.get('prediction_log', [])
+    if not log:
+        st.markdown("""
+        <div class="glass-card" style="text-align:center;padding:2.5rem">
+            <div style="font-size:3rem;margin-bottom:0.5rem">📡</div>
+            <p style="color:#475569;font-size:0.9rem">Belum ada riwayat prediksi.<br>Lakukan prediksi di tab <strong style="color:#818cf8">Prediksi Tunggal</strong> terlebih dahulu.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        log_df = pd.DataFrame(log)
+        n, n_c = len(log_df), (log_df['prediction']==1).sum()
+        avg_p = log_df['prob_churn'].mean()
+        st.markdown(f"""
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.6rem;margin-bottom:1rem">
+            <div class="stat-chip"><div class="s-label">Total Prediksi</div><div class="s-value indigo">{n}</div></div>
+            <div class="stat-chip"><div class="s-label">⚠️ Churn</div><div class="s-value coral">{n_c}</div></div>
+            <div class="stat-chip"><div class="s-label">✅ Aman</div><div class="s-value emerald">{n-n_c}</div></div>
+            <div class="stat-chip"><div class="s-label">Avg Risk</div><div class="s-value amber">{avg_p:.1f}%</div></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        hc1, hc2 = st.columns(2)
+        with hc1:
+            fig_h1 = px.pie(names=['⚠️ Churn','✅ Aman'], values=[n_c, n-n_c],
+                color_discrete_sequence=['#ef4444','#22c55e'], hole=0.5, title='Distribusi Hasil')
+            fig_h1.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                font_color='#94a3b8', title_font_color='#e2e8f0', margin=dict(t=40,b=10,l=10,r=10), height=260)
+            st.plotly_chart(fig_h1, use_container_width=True, config={'displayModeBar': False})
+        with hc2:
+            fig_h2 = px.histogram(log_df, x='prob_churn', nbins=10, color_discrete_sequence=['#818cf8'], title='Distribusi Skor Risiko')
+            fig_h2.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                font_color='#94a3b8', title_font_color='#e2e8f0', xaxis_color='#475569', yaxis_color='#475569',
+                margin=dict(t=40,b=10,l=10,r=10), height=260, xaxis_title='Prob. Churn (%)', yaxis_title='Jumlah')
+            st.plotly_chart(fig_h2, use_container_width=True, config={'displayModeBar': False})
+
+        with st.expander("📋 Lihat semua riwayat"):
+            st.dataframe(log_df, use_container_width=True)
+            st.download_button("📥 Export Riwayat", data=log_df.to_csv(index=False),
+                file_name=f"riwayat_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv", use_container_width=True)
+
+# FOOTER
+st.markdown("""
+<div style="text-align:center;padding:2rem 0 0.5rem;border-top:1px solid #1e2235;margin-top:2rem">
+    <p style="font-size:0.65rem;color:#334155;font-family:'DM Mono';letter-spacing:0.1em;margin:0">
+        CHURNPREDICTOR · UAS DATA SCIENCE · MACHINE LEARNING PIPELINE
+    </p>
+</div>
+""", unsafe_allow_html=True)
